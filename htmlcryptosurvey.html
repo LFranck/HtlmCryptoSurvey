@@ -1,0 +1,725 @@
+<html>
+    <head>
+        <title>Cours du Bitcoin en temps réel</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <style type="text/css">  
+            div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
+                margin: 5px;
+                padding: 5px;
+                font-size: 25px;
+                line-height: 30px;
+                min-height:60px;
+                font-weight: bold;
+                border:1px solid #ccc;
+                border-radius:5px;
+                width:250px;
+                margin-left:auto;
+                margin-right:auto;
+                padding-top:0px;
+                text-align: center;
+                position: relative;
+            }
+            div#horo {
+                right:5px;
+                bottom:-21px;
+                font-size: 12px;
+            }
+            div#source {
+                font-size:12px;
+                color:#999;
+                position:fixed;
+                bottom:5px;
+                right:5px;
+            }
+            div#info {
+                background-color:#eee;
+                min-height: 10px;
+                padding:5px;
+                margin:10px;
+                font-size: 15px;
+            }
+        </style>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript">
+            function drawChart(values, options) {
+                var data = google.visualization.arrayToDataTable(values);
+                var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+                chart.draw(data, options);
+            }
+        </script>
+        <script type="text/javascript">
+            // Paramètres
+            var exchange = "kraken";
+            var currency = "EUR";
+            var coin = "BTC";
+            var urlDay, urlPrice, urlHour;
+            //var url = constructUrl("histoday", "limit=700");
+            //var url = constructUrl("histoday", "allData=true");
+            //var urlPrice = contructUrl("price", "allData=true");
+            //https://min-api.cryptocompare.com/data/v2/histominute?fsym=BTC&tsym=GBP&limit=10
+            //var urlExchangeList = "https://min-api.cryptocompare.com/data/exchange/list";
+
+
+
+            function constructUrl(func, param) {
+                var url = "https://min-api.cryptocompare.com/data/"
+                url += func;
+                url += "?fsym=" + coin;
+                if (func == 'price')
+                    url += "&tsyms=" + currency;
+                else
+                    url += "&tsym=" + currency;
+                if (exchange != "")
+                    url += "&e=" + exchange;
+                url += "&" + param;
+                //console.log(url);
+                return url;
+            }
+
+            // GetCours
+            var jsonBlochainList = [];
+            var jsonCours = [];
+            var jsonprevious = [];
+            var jsonDays = [];
+            var jsonHours = [];
+            var nbjr = 2;
+            var affi = 15;
+            var previousValue = 0;
+            var previousHigh = 0, previousLow = 0;
+            var currentHigh = 0, currentLow = 0;
+            var valuesLow = [];
+            var valuesHigh = [];
+            /**
+             * Formatage de la date
+             * @param {type} d
+             * @returns {String}
+             */
+            function formatDate(d) {
+                var dt = new Date();
+                dt.setTime(1000 * d);
+                return dt.toLocaleDateString('fr-FR', {timeZone: 'UTC'});
+            }
+
+            /**
+             * Calcul la moyenne des valeurs contenues dans le tableau a
+             * @param {array} a
+             * @returns {Number}
+             */
+            function numAverage(a) {
+                var b = a.length, c = 0, i;
+                for (i = 0; i < b; i++) {
+                    c += Number(a[i]);
+                }
+                return c / b;
+            }
+
+            /**
+             * 
+             * @param {type} m
+             * @returns {unresolved}
+             */
+            function formatMontant(m) {
+                var a = 'fr-FR';
+                if (currency == 'USD') {
+                    a = 'us-US';
+                }
+                var intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency});
+                return intlN.format(m);
+            }
+
+            /**
+             * 
+             * @param {type} UNIX_timestamp
+             * @returns {String}
+             */
+            function timeConverter(UNIX_timestamp, complet) {
+                var a = new Date(UNIX_timestamp * 1000);
+                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                var year = a.getFullYear();
+                var month = months[a.getMonth()];
+                var date = a.getDate();
+                var hour = a.getHours();
+                if (hour < 10)
+                    hour = "0" + hour;
+                var min = a.getMinutes();
+                if (min < 10)
+                    min = "0" + min;
+                var sec = a.getSeconds();
+                if (sec < 10)
+                    sec = "0" + sec;
+                var time = date + ' ' + month;
+                if (complet)
+                    time = date + ' ' + month + ' ' + hour + ':' + min + ':' + sec;
+                return time;
+            }
+
+            /**
+             * 
+             * @param {type} entry
+             * @param {type} nbJrs
+             * @returns {undefined}
+             */
+            function calcul(nbJrs) {
+                var pas = 250;
+                for (j = 0; j < 20; j++) {
+                    var usd = 1, btc = 0;
+                    var nbPas = 0, nbOp = 0, nbLg = 0;
+                    var currentLow = [], currentHigh = [];
+                    var avgLowBefore = 0, avgHighBefore = 0;
+                    var avgLowAfter = 0, avgHighAfter = 0;
+                    var message = "";
+                    for (i = pas * j; (i < pas + pas * j) && (i < valuesHigh.length); i++) {
+                        nbPas++;
+                        avgLowBefore = numAverage(currentLow);
+                        avgHighBefore = numAverage(currentHigh);
+                        currentLow.push(valuesLow[i]);
+                        currentHigh.push(valuesHigh[i]);
+                        if (currentLow.length > nbJrs)
+                            currentLow.shift();
+                        if (currentHigh.length > nbJrs)
+                            currentHigh.shift();
+                        avgLowAfter = numAverage(currentLow);
+                        avgHighAfter = numAverage(currentHigh);
+                        if (btc == 0 && (avgLowBefore > valuesLow[i]) && (avgLowAfter < valuesLow[i + 1])) {
+                            btc = usd / valuesLow[i + 1];
+                            message += formatMontant('EUR', usd) + "€\tAchat à " + valuesLow[i + 1] + "€\t-> " + formatMontant('BTC', btc) + "BTC";
+                            usd = 0;
+                            nbOp++;
+                        } else if (usd == 0 && (avgHighBefore < valuesHigh[i]) && (avgHighAfter > valuesHigh[i + 1])) {
+                            usd = btc * valuesHigh[i + 1];
+                            message += formatMontant('BTC', btc) + "BTC\tVente à " + valuesHigh[i + 1] + "€\t-> " + formatMontant('EUR', usd) + "€";
+                            btc = 0;
+                            nbOp++;
+                        }
+                        //if (message != "") console.log(message);
+                        message = "";
+                    }
+                    var total = btc == 0 ? usd : btc * valuesHigh[i - 1];
+                    //document.getElementById("info").innerHTML += "<br /><br />" + formatMontant(total); //"<br />" + nbJrs + " : " +nbPas+"/"+ nbOp + " BTC=" + formatMontant(btc) + "\t$=" + formatMontant(usd) + " value=" + formatMontant(total);
+                }
+            }
+
+            /**
+             * 
+             * @param {type} url
+             * @param {type} ret
+             * @returns {undefined}
+             */
+            function getJson(url, ret) {
+                //console.log("getJson ->" + url)
+                /* Appel AJAX vers cryptocompare.com */
+                var ajax = new XMLHttpRequest();
+                //console.log("getJson : readyState après new : " + ajax.readyState);
+                /* Détection de l'avancement de l'appel */
+                ajax.onreadystatechange = function () {
+                    //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
+                }
+                /* Détection de la fin de l'appel */
+                ajax.onload = function () {
+                    //console.log("getJson : Appel AJAX terminé");
+                    //console.log("  status : " + this.status);
+                    //console.log("  response : " + this.response);
+                    if (this.status == 200) {
+                        /* Le service a bien répondu */
+                        try {
+                            var json = JSON.parse(this.response);
+                            var datas = json.Data;
+                            if (json.Data.Data)
+                                datas = json.Data.Data;
+                            for (var i = 0; i < datas.length; i++) {
+                                ret[i] = datas[i];
+                            }
+                            //console.log(ret);
+                        } catch (err) {
+                            console.log("getJson : Retour JSON incorrect ->" + url);
+                            return false;
+                        }
+                    }
+                }
+                /* Détection du timeout */
+                ajax.ontimeout = function () {
+                    console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                    /* Relancer l'appel 5 secondes plus tard */
+                    setTimeout(function () {
+                        getJson(url, ret);
+                    }, 5000);
+                }
+                /* Préparation de la requête et envoi */
+                ajax.open("GET", url, true);
+                ajax.timeout = 1000;
+                /* Délai d'expiration à 1 seconde */
+                ajax.send();
+            }
+
+            /**
+             * Récupère la liste des coins pour les mettres dans le select
+             * @param {type} url
+             * @returns {undefined}
+             */
+            function getBlockchain() {
+                console.log("getBlockchain");
+                var url = "https://min-api.cryptocompare.com/data/blockchain/list";
+                var ajax = new XMLHttpRequest();
+                ajax.onload = function () {
+                    console.log("getBlockchain -> " + this.status);
+                    if (this.status == 200) {
+                        try {
+                            var json = JSON.parse(this.response);
+                            console.log(json);
+                            if (json.Response == "Error")
+                                return false;
+                            var datas = json.Data;
+                            select = document.getElementById('blockchain');
+                            select.appendChild(opt);
+                            for (var i = 0; i <= datas.length; i++) {
+                                console.log(datas[i].symbol);
+                                var opt = document.createElement('option');
+                                opt.value = datas[i].symbol;
+                                opt.innerHTML = datas[i].symbol;
+                                select.appendChild(opt);
+                            }
+                        } catch (err) {
+                            console.log("getJson " + url + " : Retour JSON incorrect -> " + err);
+                            return false;
+                        }
+                    }
+                }
+                ajax.ontimeout = function () {
+                    console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                    setTimeout(function () {
+                        getBlockchain(url, ret);
+                    }, 5000);
+                }
+                ajax.open("GET", url, true);
+                ajax.timeout = 1000;
+                ajax.send();
+            }
+
+            /**
+             * 
+             * @returns {undefined}
+             */
+            function getHisto(url) {
+                /* Appel AJAX vers cryptocompare.com */
+                var ajax = new XMLHttpRequest();
+                console.log("getHisto : readyState après new : " + ajax.readyState);
+                /* Détection de l'avancement de l'appel */
+                ajax.onreadystatechange = function () {
+                    //console.log("getHisto : readyState a changé et vaut : " + ajax.readyState)
+                }
+                /* Détection de la fin de l'appel */
+                ajax.onload = function () {
+                    var lastDate;
+                    //console.log("getCours : Appel AJAX terminé");
+                    //console.log("  status : " + this.status);
+                    //console.log("  response : " + this.response);
+                    //console.log("  response : " + this.response);
+                    if (this.status == 200) {
+                        /* Le service a bien répondu */
+                        try {
+                            // Enregistrement des valeurs
+                            JSON.parse(this.response, (key, currentValue) => {
+                                //console.log(key);
+                                switch (key) {
+                                    case 'high':
+                                        valuesHigh.push(currentValue);
+                                        break;
+                                    case 'low':
+                                        valuesLow.push(currentValue);
+                                        break;
+                                    case 'time':
+                                        lastDate = currentValue;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            });
+                            console.log("lecture ->" + valuesLow.length + " " + valuesHigh.length + " last date=" + timeConverter(lastDate));
+                            //calcul(5);
+                            /*for (var i = 2; i < 16; i++) {
+                             calcul(i);
+                             }*/
+                        } catch (err) {
+                            console.log("Get Histo : Retour JSON incorrect " + err);
+                            return false;
+                        }
+                    }
+                }
+                /* Détection du timeout */
+                ajax.ontimeout = function () {
+                    console.log("getHisto Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                    /* Relancer l'appel 5 secondes plus tard */
+                    setTimeout("getHisto()", 5000);
+                }
+                /* Préparation de la requête et envoi */
+                ajax.open("GET", url, true);
+                ajax.timeout = 1000;
+                /* Délai d'expiration à 1 seconde */
+                ajax.send();
+            }
+
+            /**
+             * Récupération des données de cours du Bitcoin en temps réel
+             * @returns {undefined}
+             */
+            function getCours(url) {
+                /* Appel AJAX vers cryptocompare.com */
+                var ajax = new XMLHttpRequest();
+                console.log("getCours : readyState après new : " + ajax.readyState);
+                /* Détection de l'avancement de l'appel */
+                ajax.onreadystatechange = function () {
+                    //console.log("getCours : readyState a changé et vaut : " + ajax.readyState)
+                }
+                /* Détection de la fin de l'appel */
+                ajax.onload = function () {
+                    //console.log("getCours : Appel AJAX terminé");
+                    //console.log("  status : " + this.status);
+                    //console.log("  response : " + this.response);
+                    if (this.status == 200) {
+                        /* Le service a bien répondu */
+                        try {
+                            if (jsonCours != null) {
+                                console.log("getCours : Enregistrement du json dans previous");
+                                jsonPrevious = jsonCours;
+                            }
+                            jsonCours = JSON.parse(this.response);
+                        } catch (err) {
+                            console.log("getCours : Retour JSON incorrect");
+                            return false;
+                        }
+                        setAffichage();
+                    }
+                }
+                /* Détection du timeout */
+                ajax.ontimeout = function () {
+                    console.log("getCours : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                    /* Relancer l'appel 5 secondes plus tard */
+                    setTimeout("getCours()", 5000);
+                }
+                /* Préparation de la requête et envoi */
+                ajax.open("GET", url, true);
+                ajax.timeout = 1000;
+                /* Délai d'expiration à 1 seconde */
+                ajax.send();
+            }
+
+            /**
+             * 
+             * @returns {undefined}
+             */
+            function getDays() {
+                /*
+                 * Traitement
+                 * @type String
+                 */
+                //console.log("getDays");
+                //console.log(jsonDays);
+                //console.log(jsonHours);
+                if (jsonDays.length == 0)
+                    return;
+                //console.log(jsonDays);
+
+                // Parcours les données des dernières heures pour compléter le tableau               
+                var highToday = 0;
+                var lowToday = 0;
+                //console.log(jsonDays);
+                //console.log(jsonHours);
+                for (var i = 0; i < jsonHours.length; i++) {
+                    if (jsonHours[i].time > jsonDays[jsonDays.length - 1].time) {
+                        if (highToday == 0 || highToday < jsonHours[i].high)
+                            highToday = jsonHours[i].high;
+                        if (lowToday == 0 || lowToday > jsonHours[i].low)
+                            lowToday = jsonHours[i].low;
+                    }
+                }
+
+                // console.log(lowToday + " < " + highToday);
+                var localDays = JSON.parse(JSON.stringify(jsonDays));
+                var myObj = {
+                    "time": Date.now() / 1000,
+                    "low": lowToday, //your artist variable
+                    "high": highToday   //your title variable
+                };
+                //localDays.push(myObj);
+                //console.log(localDays);
+
+                var moyHigh = [], moyLow = [];
+                for (var i = 0; i < localDays.length; i++) {
+                    moyHigh[i] = 0;
+                    moyLow[i] = 0;
+                }
+                for (var k = 0; k < localDays.length; k++) {
+                    var cumulHigh = 0, cumulLow = 0;
+                    for (var l = k; l < k + nbjr; l++) {
+                        if (l < localDays.length) {
+                            cumulHigh += localDays[l].high;
+                            cumulLow += localDays[l].low;
+                        }
+                    }
+                    if (l - 1 < localDays.length) {
+                        moyHigh[l - 1] = cumulHigh / nbjr;
+                        moyLow[l - 1] = cumulLow / nbjr;
+                    }
+                }
+
+                affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low);
+                affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high);
+                affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1]);
+                affichageTexte("highcadreavg", "highavg", moyHigh[moyHigh.length - 2], moyHigh[moyHigh.length - 1]);
+
+                var inputs = [];
+                var colons = []
+                colons.push('Date');
+                colons.push('Low');
+                colons.push({role: 'annotation'});
+                colons.push('High');
+                colons.push({role: 'annotation'});
+                colons.push('Moy Low');
+                colons.push('Moy High');
+                colons.push('Now');
+                var lastAchat = 0;
+                var lastVente = 0;
+                for (var i = localDays.length - affi * 2; i < localDays.length; i++) {
+                    if (inputs.length == affi)
+                        inputs.shift();
+                    var a1 = undefined, a2 = undefined;
+                    var ligne = [];
+
+                    if ((localDays[i - 1].low < moyLow[i - 1]) && (localDays[i].low > moyLow[i])) {
+                        var current = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
+                        lastAchat = localDays[i].low;
+                        a1 = "achat (" + current + "%)";
+                        if (i == localDays.length - 1)
+                            notifyMe("Achat interressant !!!")
+                    }
+                    if ((localDays[i - 1].high > moyHigh[i - 1]) && (localDays[i].high < moyHigh[i])) {
+                        var current = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
+                        lastVente = localDays[i].high;
+                        a2 = "vente (" + current + "%)";
+                        if (i == localDays.length - 1)
+                            notifyMe("Vente interressante !!!")
+                    }
+
+                    ligne.push(timeConverter(localDays[i].time, false));
+                    ligne.push(localDays[i].low);
+                    ligne.push(a1);
+                    ligne.push(localDays[i].high);
+                    ligne.push(a2);
+                    ligne.push(moyLow[i]);
+                    ligne.push(moyHigh[i]);
+                    ligne.push(jsonCours[jsonCours.length - 1].close);
+                    inputs.push(ligne);
+                }
+                // Rajoute les entêtes
+                inputs.unshift(colons);
+
+                var options = {
+                    title: 'Les courbes',
+                    curveType: 'function',
+                    lineWidth: 1,
+                    legend: {position: 'bottom'},
+                    hAxis: {title: 'Date'},
+                    vAxis: {title: 'Values'},
+                    annotations: {
+                        boxStyle: {
+                            // Color of the box outline.
+                            stroke: '#888',
+                            // Thickness of the box outline.
+                            strokeWidth: 1,
+                            // x-radius of the corner curvature.
+                            rx: 10,
+                            // y-radius of the corner curvature.
+                            ry: 10,
+                            // Attributes for linear gradient fill.
+                            gradient: {
+                                // Start color for gradient.
+                                color1: '#fbf6a7',
+                                // Finish color for gradient.
+                                color2: '#33b679',
+                                // Where on the boundary to start and
+                                // end the color1/color2 gradient,
+                                // relative to the upper left corner
+                                // of the boundary.
+                                x1: '0%', y1: '0%',
+                                x2: '100%', y2: '100%',
+                                // If true, the boundary for x1,
+                                // y1, x2, and y2 is the box. If
+                                // false, it's the entire chart.
+                                useObjectBoundingBoxUnits: true
+                            }
+                        }
+                    }
+                };
+                google.charts.load('current', {'packages': ['corechart']});
+                google.charts.setOnLoadCallback(function () {
+                    drawChart(inputs, options);
+                });
+            }
+
+            function affichageTexte(box, zone, inPrevious, inCurrent) {
+                document.getElementById(zone).innerHTML = "<small>" + formatMontant(inPrevious) + "</small>";
+                if (inPrevious < inCurrent) {
+                    document.getElementById(zone).innerHTML += "↗";
+                    document.getElementById(box).style.backgroundColor = "#29b84c";
+                } else if (inPrevious > inCurrent) {
+                    document.getElementById(zone).innerHTML += "↘";
+                    document.getElementById(box).style.backgroundColor = "#c81111";
+                } else {
+                    document.getElementById(zone).innerHTML += " ➔";
+                    document.getElementById(box).style.backgroundColor = "#0c83b6";
+                }
+                document.getElementById(zone).innerHTML += "<br />" + formatMontant(inCurrent);
+            }
+
+            /**
+             * 
+             * @returns {undefined}
+             */
+            function setAffichage() {
+                //console.log("setAffichage");
+                getDays();
+                if (jsonCours == null) {
+                    return;
+                }
+                if (jsonCours.length == 0) {
+                    return;
+                }
+
+                var inPrevious = jsonCours[0].close;
+                var inCurrent = jsonCours[jsonCours.length - 1].close;
+                // Afficher
+                affichageTexte("bitcoin", "cours", inPrevious, inCurrent);
+
+                document.querySelector("div#horo").innerHTML = "MàJ " + timeConverter(jsonCours[jsonCours.length - 1].time, true);
+            }
+
+            /**
+             * Démarrage de l'appel
+             * @returns {undefined}
+             */
+
+            function toDo() {
+                //getBlockchain();
+
+                urlDay = constructUrl("histoday", "limit=100");
+                urlPrice = constructUrl("histominute", "limit=10");
+                urlHour = constructUrl("histohour", "limit=24")
+
+                getJson(urlPrice, jsonCours);
+                setInterval(function () {
+                    getJson(urlPrice, jsonCours);
+                }, 30000);
+
+                setAffichage();
+                setInterval("setAffichage()", 10000);
+
+                // Le cours des derniers jours
+                getJson(urlHour, jsonHours);
+                setInterval(function () {
+                    getJson(urlHour, jsonHours);
+                }, 30000);
+                // Le cours des derniers jours
+                getJson(urlDay, jsonDays);
+                setInterval(function () {
+                    getJson(urlDay, jsonDays);
+                }, 30000);
+            }
+
+            window.onload = function () {
+                toDo();
+            }
+
+            /**
+             * 
+             * @returns {undefined}
+             */
+            function notifyMe(mess) {
+                console.log("notifyMe");
+                if (!window.Notification) {
+                    console.log('Browser does not support notifications.');
+                } else {
+                    // check if permission is already granted
+                    if (Notification.permission === 'granted') {
+                        // show notification here
+                        var notify = new Notification('Attention !!', {
+                            body: mess,
+                            icon: 'https://bit.ly/2DYqRrh',
+                        });
+                    } else {
+                        // request permission from user
+                        Notification.requestPermission().then(function (p) {
+                            if (p === 'granted') {
+                                // show notification here
+                                var notify = new Notification('Attention !!', {
+                                    body: mess,
+                                    icon: 'https://bit.ly/2DYqRrh',
+                                });
+                            } else {
+                                console.log('User blocked notifications.');
+                            }
+                        }).catch(function (err) {
+                            console.error(err);
+                        });
+                    }
+                }
+            }
+
+        </script>
+    </head>
+    <body>
+        <table width="100%">
+            <tr><td>
+                    <select id="sbitcoin" onChange="coin = this.value; toDo();" size="5">
+                        <option value="BTC" selected>BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="DTX">DTX</option>
+                        <option value="EARTH">EARTH</option>
+                    </select> 
+                    <select id="scurrency" onChange="currency = this.value; toDo();" size="5">
+                        <option value="USD">USD</option>
+                        <option value="EUR" selected>EUR</option>
+                    </select> 
+                    <select id="sexchange" onChange="exchange = this.value; toDo();" size="5">
+                        <option value="kraken" selected>Kraken</option>
+                        <option value="binance">Binance</option>
+                        <option value="coinbase">Coinbase</option>
+                        <option value="gemini">Gemini</option>
+                    </select> 
+                </td>
+                <td>
+                    <br />Moyenne sur <input id="snbjr" value="2" onChange="nbjr = parseInt(this.value); toDo();" size="1"> jours
+                    <br />Affichage historique sur <input id="saff" value="15" onChange="affi = parseInt(this.value); toDo();" size="1"> jours
+                </td>
+            </tr></table>
+        <h1 id="monH1">Cours en temps réel</h1>
+        <table>
+            <tr><th>Low</th><th>Cours</th><th>High</th></tr>
+            <tr>
+                <td>
+                    <div id="lowcadre"><div id="low"></div></div>
+                    <div id="lowcadreavg"><div id="lowavg"></div></div>
+                </td>
+                <td>
+                    <div id="bitcoin"><div id="cours"></div></div>
+            <center><div id="horo"></div></center>
+        </td>
+        <td>
+            <div id="highcadre"><div id="high"></div></div>
+            <div id="highcadreavg"><div id="highavg"></div></div>
+        </td>
+    </tr>
+    <tr><th>Low Average</th><th></th><th>High Average</th></tr>
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr><td colspan="3"></td></tr>
+</table>
+
+<div id="curve_chart" style="width: 900px; height: 500px;align-items: center;"></div>
+<div id="info"></div>
+<div id="source">Cours provenant de l'API cryptocompare.com</div>
+</body>
+</html>
+
