@@ -72,7 +72,7 @@
                 if (exchange != "")
                     url += "&e=" + exchange;
                 url += "&" + param;
-                //console.log(url);
+                console.log(url);
                 return url;
             }
 
@@ -159,44 +159,37 @@
              * @param {type} nbJrs
              * @returns {undefined}
              */
-            function calcul(nbJrs) {
-                var pas = 250;
-                for (j = 0; j < 20; j++) {
-                    var usd = 1, btc = 0;
-                    var nbPas = 0, nbOp = 0, nbLg = 0;
-                    var currentLow = [], currentHigh = [];
-                    var avgLowBefore = 0, avgHighBefore = 0;
-                    var avgLowAfter = 0, avgHighAfter = 0;
-                    var message = "";
-                    for (i = pas * j; (i < pas + pas * j) && (i < valuesHigh.length); i++) {
-                        nbPas++;
-                        avgLowBefore = numAverage(currentLow);
-                        avgHighBefore = numAverage(currentHigh);
-                        currentLow.push(valuesLow[i]);
-                        currentHigh.push(valuesHigh[i]);
-                        if (currentLow.length > nbJrs)
-                            currentLow.shift();
-                        if (currentHigh.length > nbJrs)
-                            currentHigh.shift();
-                        avgLowAfter = numAverage(currentLow);
-                        avgHighAfter = numAverage(currentHigh);
-                        if (btc == 0 && (avgLowBefore > valuesLow[i]) && (avgLowAfter < valuesLow[i + 1])) {
-                            btc = usd / valuesLow[i + 1];
-                            message += formatMontant('EUR', usd) + "€\tAchat à " + valuesLow[i + 1] + "€\t-> " + formatMontant('BTC', btc) + "BTC";
-                            usd = 0;
-                            nbOp++;
-                        } else if (usd == 0 && (avgHighBefore < valuesHigh[i]) && (avgHighAfter > valuesHigh[i + 1])) {
-                            usd = btc * valuesHigh[i + 1];
-                            message += formatMontant('BTC', btc) + "BTC\tVente à " + valuesHigh[i + 1] + "€\t-> " + formatMontant('EUR', usd) + "€";
-                            btc = 0;
-                            nbOp++;
-                        }
-                        //if (message != "") console.log(message);
-                        message = "";
+            function calcul(localdays, moyLow, moyHigh, usd, start) {
+                let timestart = new Date(start);
+                console.log(timestart.getTime());
+                document.getElementById("info").innerHTML = ""; // vidage de l'info
+
+                var btc = 0;
+                var nbOp = 0;
+
+                var message = "";
+                for (var i = 0; i < localdays.length - 1; i++) {
+                    if(localdays[i].time< timestart.getTime()/1000) continue;
+                    if (btc == 0 && (moyLow[i] > localdays[i].low) && (moyLow[i + 1] < localdays[i + 1].low)) {
+                        btc = usd / localdays[i].low;
+                        message += "Le" + formatDate(localdays[i].time) + "\tAchat à " + localdays[i].low + "€\t-> " + formatMontant(btc) + "BTC";
+                        usd = 0;
+                        nbOp++;
+                    } else if (usd == 0 && (moyHigh[i] < localdays[i].high) && (moyHigh[i + 1] > localdays[i + 1].high)) {
+                        usd = btc * localdays[i].high;
+                        message += "Le" + formatDate(localdays[i].time) + "\tVente à " + localdays[i].high + "€\t-> " + formatMontant(usd) + "€";
+                        btc = 0;
+                        nbOp++;
                     }
-                    var total = btc == 0 ? usd : btc * valuesHigh[i - 1];
-                    //document.getElementById("info").innerHTML += "<br /><br />" + formatMontant(total); //"<br />" + nbJrs + " : " +nbPas+"/"+ nbOp + " BTC=" + formatMontant(btc) + "\t$=" + formatMontant(usd) + " value=" + formatMontant(total);
+                    if (message != "") {
+                        //console.log(message);
+                        document.getElementById("info").innerHTML += "<br />" + message;
+                    }
+                    message = "";
                 }
+                var total = btc == 0 ? usd : btc * valuesHigh[i - 1];
+                document.getElementById("info").innerHTML += "<br /><br />" + formatMontant(total) + " Nombre d'op :" + nbOp + " BTC=" + formatMontant(btc) + "\t$=" + formatMontant(usd) + " value=" + formatMontant(total);
+                document.getElementById("result").innerHTML = formatMontant(total);
             }
 
             /**
@@ -335,10 +328,6 @@
                                 }
                             });
                             console.log("lecture ->" + valuesLow.length + " " + valuesHigh.length + " last date=" + timeConverter(lastDate));
-                            //calcul(5);
-                            /*for (var i = 2; i < 16; i++) {
-                             calcul(i);
-                             }*/
                         } catch (err) {
                             console.log("Get Histo : Retour JSON incorrect " + err);
                             return false;
@@ -434,13 +423,16 @@
                 }
 
                 // console.log(lowToday + " < " + highToday);
+                //console.log(highToday);
+                //console.log(lowToday);
+
                 var localDays = JSON.parse(JSON.stringify(jsonDays));
                 var myObj = {
                     "time": Date.now() / 1000,
                     "low": lowToday, //your artist variable
                     "high": highToday   //your title variable
                 };
-                //localDays.push(myObj);
+                localDays.push(myObj);
                 //console.log(localDays);
 
                 var moyHigh = [], moyLow = [];
@@ -461,7 +453,7 @@
                         moyLow[l - 1] = cumulLow / nbjr;
                     }
                 }
-
+                calcul(localDays, moyLow, moyHigh, document.getElementById("sommedepart").value, document.getElementById("tripstart").value);
                 affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low);
                 affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high);
                 affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1]);
@@ -601,7 +593,7 @@
             function toDo() {
                 //getBlockchain();
 
-                urlDay = constructUrl("histoday", "limit=100");
+                urlDay = constructUrl("histoday", "allData=true");
                 urlPrice = constructUrl("histominute", "limit=10");
                 urlHour = constructUrl("histohour", "limit=24")
 
@@ -668,6 +660,7 @@
     </head>
     <body>
         <table width="100%">
+            <tr><th align="left">Choix statistiques</th><th align="left">Paramètres</th></tr>
             <tr><td>
                     <select id="sbitcoin" onChange="coin = this.value; toDo();" size="5">
                         <option value="BTC" selected>BTC</option>
@@ -687,11 +680,25 @@
                     </select> 
                 </td>
                 <td>
-                    <br />Moyenne sur <input id="snbjr" value="2" onChange="nbjr = parseInt(this.value); toDo();" size="1"> jours
-                    <br />Affichage historique sur <input id="saff" value="15" onChange="affi = parseInt(this.value); toDo();" size="1"> jours
+                    <br />Moyenne sur <input id="snbjr" value="2" onChange="nbjr = parseInt(this.value);
+                            if (nbjr < 1)
+                                alert('Ni nul ni négatif !!');
+                            else
+                                toDo();" size="1"> jours
+                    <br />Affichage historique sur <input id="saff" value="15" onChange="affi = parseInt(this.value);
+                            if (affi < 1)
+                                alert('Ni nul ni négatif !!');
+                            else
+                                toDo();" size="1"> jours
                 </td>
-            </tr></table>
-        <h1 id="monH1">Cours en temps réel</h1>
+            </tr>
+            <tr><th align="left">Paramètres simulation</th><th align="left">Résultat</th></tr>
+            <tr>
+                <td>Somme de départ <input type="number" id="sommedepart" name="sommedepart" min="1" max="100"> Date de Départ <input type="date" id="tripstart" name="tripstart" value="2018-07-22" min="2010-01-01" max="2021-12-31"></td>
+                <td><div id="resultcadre"><div id="result">Attendez</div></div></td>
+            </tr>
+        </table>
+        <h2 id="monH1">Cours en temps réel</h2>
         <table>
             <tr><th>Low</th><th>Cours</th><th>High</th></tr>
             <tr>
@@ -719,7 +726,7 @@
 
 <div id="curve_chart" style="width: 900px; height: 500px;align-items: center;"></div>
 <div id="info"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2</div>
 </body>
 </html>
 
