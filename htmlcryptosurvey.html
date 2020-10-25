@@ -5,7 +5,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="-1" />
+        <meta http-equiv="Expires" content="0" />
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <style type="text/css">  
             div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
@@ -213,6 +213,7 @@
                 var moyjrs = Math.round(currnbjrs / nbOp) + 1;
                 var pourcent = Math.exp(Math.log(total / usdstart) / (nbOp-1))-1;
                 total = formatMontant(total);
+                document.getElementById("result").innerHTML = total;
                 pourcent = Math.round(10000*pourcent)/100;
                 document.getElementById("info").innerHTML += "<br /><br />Résultat " + total + " en "
                         + nbOp + " opérations en " + currnbjrs + " jours soit tous les "
@@ -719,6 +720,7 @@
                         <option value="XLM" selected>Lumen</option>
                         <option value="XMR">Monero</option>
                         <option value="DASH">Dash</option>
+                        <option value="BAT">BAT</option>
                     </select> 
                     <select id="scurrency" onChange="currency = this.value; toDo();" size="5">
                         <option value="USD">USD</option>
@@ -774,6 +776,6 @@
 
 <div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
 <div id="info"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.4 25/10/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.5 25/10/2020</div>
 </body>
 </html>
