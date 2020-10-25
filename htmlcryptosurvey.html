@@ -183,6 +183,7 @@
                 document.getElementById("info").innerHTML = ""; // vidage de l'info
                 if (usd == 0)
                     return;
+                var usdstart = usd;
                 var btc = 0;
                 var nbOp = 0;
 
@@ -209,8 +210,13 @@
                 }
                 var total = (btc == 0) ? usd : btc * localdays[localdays.length - 1].high;
                 var currnbjrs = Math.round((Date.now() - timestart) / 1000 / 3600 / 24);
-                var moyjrs = Math.round(currnbjrs / nbOp)+1;
-                document.getElementById("info").innerHTML += "<br /><br />Résultat " + formatMontant(total) + " en " + nbOp + " opérations en " + currnbjrs + " jours soit tous les "+ moyjrs + " jours.";
+                var moyjrs = Math.round(currnbjrs / nbOp) + 1;
+                var pourcent = Math.exp(Math.log(total / usdstart) / (nbOp-1))-1;
+                total = formatMontant(total);
+                pourcent = Math.round(10000*pourcent)/100;
+                document.getElementById("info").innerHTML += "<br /><br />Résultat " + total + " en "
+                        + nbOp + " opérations en " + currnbjrs + " jours soit tous les "
+                        + moyjrs + " jours et " + pourcent + " % de gains en moyenne.";
             }
 
             /**
@@ -766,8 +772,8 @@
     <tr><td colspan="3"></td></tr>
 </table>
 
-<div id="curve_chart" style="width: 900px; height: 500px;align-items: center;"></div>
+<div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
 <div id="info"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.3</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.4 25/10/2020</div>
 </body>
 </html>
