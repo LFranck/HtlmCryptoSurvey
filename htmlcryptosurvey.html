@@ -42,7 +42,7 @@
                 padding:5px;
                 margin:10px;
                 font-size: 15px;
-            }
+            } 
         </style>
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
         <script type="text/javascript">
@@ -81,6 +81,7 @@
                 if (exchange != "")
                     url += "&e=" + exchange;
                 url += "&" + param;
+                //console.log(url);
                 return url;
             }
 
@@ -97,6 +98,7 @@
             var currentHigh = 0, currentLow = 0;
             var valuesLow = [];
             var valuesHigh = [];
+
             /**
              * Formatage de la date
              * @param {type} d
@@ -173,6 +175,29 @@
 
             /**
              * 
+             * @param {type} UNIX_timestamp
+             * @returns {String}
+             */
+            function hourConverter(UNIX_timestamp) {
+                var a = new Date(UNIX_timestamp * 1000);
+                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                var year = a.getFullYear();
+                var month = months[a.getMonth()];
+                var date = a.getDate();
+                var hour = a.getHours();
+                if (hour < 10)
+                    hour = "0" + hour;
+                var min = a.getMinutes();
+                if (min < 10)
+                    min = "0" + min;
+                var sec = a.getSeconds();
+                if (sec < 10)
+                    sec = "0" + sec;
+                return hour + ':' + min + ':' + sec;
+            }
+
+            /**
+             * 
              * @param {type} entry
              * @param {type} nbJrs
              * @returns {undefined}
@@ -211,10 +236,10 @@
                 var total = (btc == 0) ? usd : btc * localdays[localdays.length - 1].high;
                 var currnbjrs = Math.round((Date.now() - timestart) / 1000 / 3600 / 24);
                 var moyjrs = Math.round(currnbjrs / nbOp) + 1;
-                var pourcent = Math.exp(Math.log(total / usdstart) / (nbOp-1))-1;
+                var pourcent = Math.exp(Math.log(total / usdstart) / (nbOp - 1)) - 1;
                 total = formatMontant(total);
                 document.getElementById("result").innerHTML = total;
-                pourcent = Math.round(10000*pourcent)/100;
+                pourcent = Math.round(10000 * pourcent) / 100;
                 document.getElementById("info").innerHTML += "<br /><br />Résultat " + total + " en "
                         + nbOp + " opérations en " + currnbjrs + " jours soit tous les "
                         + moyjrs + " jours et " + pourcent + " % de gains en moyenne.";
@@ -227,7 +252,7 @@
              * @returns {undefined}
              */
             function getJson(url, ret) {
-                //console.log("getJson ->" + url)
+                // console.log("getJson ->" + url)
                 /* Appel AJAX vers cryptocompare.com */
                 var ajax = new XMLHttpRequest();
                 //console.log("getJson : readyState après new : " + ajax.readyState);
@@ -247,11 +272,17 @@
                             var datas = json.Data;
                             if (json.Data.Data)
                                 datas = json.Data.Data;
-                            for (var i = 0; i < datas.length; i++) {
-                                ret[i] = datas[i];
+                            if (datas.length) {
+                                for (var i = 0; i < datas.length; i++) {
+                                    ret[i] = datas[i];
+                                }
+                            } else {
+                                Object.keys(datas).forEach(key => {
+                                    ret.push(datas[key].symbol);
+                                })
                             }
-                            //console.log(ret);
                         } catch (err) {
+                            //document.getElementById("statresult").style.visibility = "hidden";
                             console.log("getJson : Retour JSON incorrect ->" + url);
                             return false;
                         }
@@ -259,6 +290,7 @@
                 }
                 /* Détection du timeout */
                 ajax.ontimeout = function () {
+                    //document.getElementById("statresult").style.visibility = "hidden";
                     console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
                     /* Relancer l'appel 5 secondes plus tard */
                     setTimeout(function () {
@@ -273,7 +305,7 @@
             }
 
             /**
-             * Récupère la liste des coins pour les mettres dans le select
+             * Récupère la liste des coins pour les mettre dans le select
              * @param {type} url
              * @returns {undefined}
              */
@@ -485,10 +517,10 @@
                     }
                 }
                 calcul(localDays, moyLow, moyHigh, document.getElementById("sommedepart").value, document.getElementById("tripstart").value);
-                affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low);
-                affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high);
-                affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1]);
-                affichageTexte("highcadreavg", "highavg", moyHigh[moyHigh.length - 2], moyHigh[moyHigh.length - 1]);
+                affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low, formatDate(localDays[localDays.length - 2].time));
+                affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high, formatDate(localDays[localDays.length - 2].time));
+                affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1], formatDate(localDays[localDays.length - 2].time));
+                affichageTexte("highcadreavg", "highavg", moyHigh[moyHigh.length - 2], moyHigh[moyHigh.length - 1], formatDate(localDays[localDays.length - 2].time));
 
                 var inputs = [];
                 var colons = []
@@ -579,8 +611,8 @@
                 });
             }
 
-            function affichageTexte(box, zone, inPrevious, inCurrent) {
-                document.getElementById(zone).innerHTML = "<small><small>hier</small> : " + formatMontant(inPrevious) + "</small>";
+            function affichageTexte(box, zone, inPrevious, inCurrent, previousDate) {
+                document.getElementById(zone).innerHTML = "<small><small>" + previousDate + "</small> " + formatMontant(inPrevious) + "</small>";
                 if (inPrevious < inCurrent) {
                     document.getElementById(zone).innerHTML += "↗";
                     document.getElementById(box).style.backgroundColor = "#29b84c";
@@ -611,9 +643,10 @@
                 var inPrevious = jsonCours[0].close;
                 var inCurrent = jsonCours[jsonCours.length - 1].close;
                 // Afficher
-                affichageTexte("bitcoin", "cours", inPrevious, inCurrent);
-
+                affichageTexte("bitcoin", "cours", inPrevious, inCurrent, hourConverter(jsonCours[0].time));
                 document.querySelector("div#horo").innerHTML = "MàJ " + timeConverter(jsonCours[jsonCours.length - 1].time, true);
+                document.getElementById("statresult").style.visibility = "visible";
+                document.getElementById("bg_mask").style.visibility = "hidden";
             }
 
             /**
@@ -621,6 +654,9 @@
              * @returns {undefined}
              */
             function toDo() {
+                document.getElementById("statresult").style.visibility = "hidden";
+                document.getElementById("bg_mask").style.visibility = "visible";
+
                 // Annulation des elements précédent
                 clearInterval(refreshUrlPrice);
                 clearInterval(refreshUrlHour);
@@ -658,6 +694,9 @@
             }
 
             window.onload = function () {
+                // Initialisation du select des coins
+                //getJson("https://min-api.cryptocompare.com/data/blockchain/list?api_key=1a01edc67d71cef22b5f25b5b439fb9d512a339d7ac223f02d93d34dc3635a32", testjson);
+                // Tâches à faire
                 toDo();
             }
 
@@ -713,20 +752,26 @@
         <table width="100%">
             <tr><th align="left">Choix statistiques</th><th align="left">Paramètres</th></tr>
             <tr><td>
-                    <select id="sbitcoin" onChange="coin = this.value; toDo();" size="5">
+                    <select id="sbitcoin" onChange="coin = this.value;
+                            toDo();" size="5">
                         <option value="BTC">Bitcoin</option>
                         <option value="ETH">Ethereum</option>
+                        <option value="USDT">Tehter USD</option>
                         <option value="XRP">Ripple</option>
+                        <option value="BCH">Bitcoin Cash</option>
+                        <option value="LINK">Chain Link</option>
                         <option value="XLM" selected>Lumen</option>
                         <option value="XMR">Monero</option>
                         <option value="DASH">Dash</option>
                         <option value="BAT">BAT</option>
                     </select> 
-                    <select id="scurrency" onChange="currency = this.value; toDo();" size="5">
+                    <select id="scurrency" onChange="currency = this.value;
+                            toDo();" size="5">
                         <option value="USD">USD</option>
                         <option value="EUR" selected>EUR</option>
                     </select> 
-                    <select id="sexchange" onChange="exchange = this.value; toDo();" size="5">
+                    <select id="sexchange" onChange="exchange = this.value;
+                            toDo();" size="5">
                         <option value="kraken" selected>Kraken</option>
                         <option value="binance">Binance</option>
                         <option value="coinbase">Coinbase</option>
@@ -734,7 +779,8 @@
                     </select> 
                 </td>
                 <td>
-                    <br />Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" onChange="nbjr = parseInt(this.value); toDo();"> jours
+                    <br />Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" size="1" onChange="nbjr = parseInt(this.value);
+                            toDo();"> jours
                     <br />Affichage historique sur <input type="number" min="5" id="saff" value="15" onChange="affi = parseInt(this.value);
                             if (affi < 1)
                                 alert('Ni nul ni négatif !!');
@@ -742,40 +788,44 @@
                                 toDo();" size="1"> jours
                 </td>
             </tr>
-            <tr><th align="left">Paramètres simulation</th><th align="left">Résultat</th></tr>
-            <tr>
-                <td>Somme de départ <input type="number" id="sommedepart" name="sommedepart" min="1" max="100"> Date de Départ <input type="date" id="tripstart" name="tripstart" value="2018-07-22" min="2010-01-01" max="2021-12-31"></td>
-                <td><div id="resultcadre"><div id="result">Attendez</div></div></td>
-            </tr>
         </table>
-        <h2 id="monH1">Cours en temps réel</h2>
-        <table>
-            <tr><th>Low</th><th>Cours</th><th>High</th></tr>
-            <tr>
-                <td>
-                    <div id="lowcadre"><div id="low"></div></div>
-                    <div id="lowcadreavg"><div id="lowavg"></div></div>
+        <div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img src="loading.gif" /></div>
+        <div id="statresult" style="hidden">
+            <table>
+                <tr><th align="left">Paramètres simulation</th><th align="left">Résultat</th></tr>
+                <tr>
+                    <td>Somme de départ <input type="number" id="sommedepart" name="sommedepart" min="1" max="100" size="1"> Date de Départ <input type="date" id="tripstart" name="tripstart" value="2018-07-22" min="2010-01-01" max="2021-12-31"></td>
+                    <td><div id="resultcadre"><div id="result">Attendez</div></div></td>
+                </tr>
+            </table>
+            <h2 id="monH1">Cours en temps réel</h2>
+            <table>
+                <tr><th>Low</th><th>Cours</th><th>High</th></tr>
+                <tr>
+                    <td>
+                        <div id="lowcadre"><div id="low"></div></div>
+                        <div id="lowcadreavg"><div id="lowavg"></div></div>
+                    </td>
+                    <td>
+                        <div id="bitcoin"><div id="cours"></div></div>
+                <center><div id="horo"></div></center>
                 </td>
                 <td>
-                    <div id="bitcoin"><div id="cours"></div></div>
-            <center><div id="horo"></div></center>
-        </td>
-        <td>
-            <div id="highcadre"><div id="high"></div></div>
-            <div id="highcadreavg"><div id="highavg"></div></div>
-        </td>
-    </tr>
-    <tr><th>Low Average</th><th></th><th>High Average</th></tr>
-    <tr>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr><td colspan="3"></td></tr>
-</table>
-
-<div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
-<div id="info"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.5 25/10/2020</div>
-</body>
+                    <div id="highcadre"><div id="high"></div></div>
+                    <div id="highcadreavg"><div id="highavg"></div></div>
+                </td>
+                </tr>
+                <tr><th>Low Average</th><th></th><th>High Average</th></tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr><td colspan="3"></td></tr>
+            </table>
+            <div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
+            <div id="info"></div>
+        </div>
+        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.7 27/10/2020</div>
+    </body>
 </html>
