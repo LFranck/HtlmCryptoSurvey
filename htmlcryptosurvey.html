@@ -544,6 +544,8 @@
                         var current = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
                         lastAchat = localDays[i].low;
                         a1 = "achat (" + current + "%)";
+                        if(localDays[i].high<localDays[i+1].high) { a1 = a1 + "++"; }
+                        else { a1 = a1 + "--"; }
                         if (i == localDays.length - 1)
                             notifyMe("Achat interressant !!!")
                     }
@@ -551,6 +553,8 @@
                         var current = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
                         lastVente = localDays[i].high;
                         a2 = "vente (" + current + "%)";
+                        if(localDays[i].low<localDays[i+1].low) {a2 = a2 + "--";}
+                        else {a2 = a2 + "++";}
                         if (i == localDays.length - 1)
                             notifyMe("Vente interressante !!!")
                     }
@@ -826,6 +830,6 @@
             <div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
             <div id="info"></div>
         </div>
-        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.7 27/10/2020</div>
+        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.8 27/10/2020</div>
     </body>
 </html>
