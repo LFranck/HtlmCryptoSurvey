@@ -1,12 +1,9 @@
 <html>
     <head>
         <title>Cours en temps réel (Prototype)</title>
-        <meta charset="UTF-8">
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="0" />
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <meta http-equiv = "pragma"content ="no-cache" >
+        <META http-equiv="expires" content="-1">
         <style type="text/css">  
             div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
                 margin: 5px;
@@ -52,11 +49,13 @@
                 chart.draw(data, options);
             }
         </script>
+        <script type="text/javascript" src="fonctions.js"></script>
         <script type="text/javascript">
             // Paramètres
             var exchange = "kraken";
             var currency = "EUR";
             var coin = "XLM";
+            var limitPourcent = 0.30;
             var urlDay, urlPrice, urlHour;
 
             // Gestion interval
@@ -70,20 +69,6 @@
 
 
 
-            function constructUrl(func, param) {
-                var url = "https://min-api.cryptocompare.com/data/"
-                url += func;
-                url += "?fsym=" + coin;
-                if (func == 'price')
-                    url += "&tsyms=" + currency;
-                else
-                    url += "&tsym=" + currency;
-                if (exchange != "")
-                    url += "&e=" + exchange;
-                url += "&" + param;
-                //console.log(url);
-                return url;
-            }
 
             // GetCours
             var jsonBlochainList = [];
@@ -99,102 +84,6 @@
             var valuesLow = [];
             var valuesHigh = [];
 
-            /**
-             * Formatage de la date
-             * @param {type} d
-             * @returns {String}
-             */
-            function formatDate(d) {
-                var dt = new Date();
-                dt.setTime(1000 * d);
-                return dt.toLocaleDateString('fr-FR', {timeZone: 'UTC'});
-            }
-
-            /**
-             * Calcul la moyenne des valeurs contenues dans le tableau a
-             * @param {array} a
-             * @returns {Number}
-             */
-            function numAverage(a) {
-                var b = a.length, c = 0, i;
-                for (i = 0; i < b; i++) {
-                    c += Number(a[i]);
-                }
-                return c / b;
-            }
-
-            /**
-             * 
-             * @param {type} m
-             * @returns {unresolved}
-             */
-            function formatMontant(m) {
-                var a = 'fr-FR';
-                if (currency == 'USD') {
-                    a = 'us-US';
-                }
-                var intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency, maximumSignificantDigits: 4});
-                return intlN.format(m);
-            }
-
-            /**
-             * 
-             * @param {type} m
-             * @returns {String}
-             */
-            function formatCoin(m) {
-                var intlN = new Intl.NumberFormat();
-                return intlN.format(m) + " " + coin;
-            }
-
-            /**
-             * 
-             * @param {type} UNIX_timestamp
-             * @returns {String}
-             */
-            function timeConverter(UNIX_timestamp, complet) {
-                var a = new Date(UNIX_timestamp * 1000);
-                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                var year = a.getFullYear();
-                var month = months[a.getMonth()];
-                var date = a.getDate();
-                var hour = a.getHours();
-                if (hour < 10)
-                    hour = "0" + hour;
-                var min = a.getMinutes();
-                if (min < 10)
-                    min = "0" + min;
-                var sec = a.getSeconds();
-                if (sec < 10)
-                    sec = "0" + sec;
-                var time = date + ' ' + month;
-                if (complet)
-                    time = date + ' ' + month + ' ' + hour + ':' + min + ':' + sec;
-                return time;
-            }
-
-            /**
-             * 
-             * @param {type} UNIX_timestamp
-             * @returns {String}
-             */
-            function hourConverter(UNIX_timestamp) {
-                var a = new Date(UNIX_timestamp * 1000);
-                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                var year = a.getFullYear();
-                var month = months[a.getMonth()];
-                var date = a.getDate();
-                var hour = a.getHours();
-                if (hour < 10)
-                    hour = "0" + hour;
-                var min = a.getMinutes();
-                if (min < 10)
-                    min = "0" + min;
-                var sec = a.getSeconds();
-                if (sec < 10)
-                    sec = "0" + sec;
-                return hour + ':' + min + ':' + sec;
-            }
 
             /**
              * 
@@ -202,7 +91,7 @@
              * @param {type} nbJrs
              * @returns {undefined}
              */
-            function calcul(localdays, moyLow, moyHigh, usd, start) {
+            function calcul(localdays, moyLow, moyHigh, usd, start, nbCritere) {
                 let timestart = new Date(start);
                 //console.log(timestart.getTime());
                 document.getElementById("info").innerHTML = ""; // vidage de l'info
@@ -217,15 +106,31 @@
                     if (localdays[i].time < timestart.getTime() / 1000)
                         continue;
                     if (btc == 0 && (moyLow[i] > localdays[i].low) && (moyLow[i + 1] < localdays[i + 1].low)) {
-                        btc = usd / localdays[i].low;
-                        message += "Le " + formatDate(localdays[i].time) + "\tAchat à " + formatMontant(localdays[i].low) + "\t-> " + formatCoin(btc);
-                        usd = 0;
-                        nbOp++;
+                        var localCritere = 1;
+                        if (localdays[i].high < localdays[i + 1].high)
+                            localCritere++;
+                        var limite = limitPourcent * (localdays[i].high - localdays[i].low) + localdays[i].low;
+                        if (localdays[i].close < limite)
+                            localCritere++;
+                        if (localCritere == nbCritere) {
+                            btc = usd / localdays[i].close;
+                            message += "Le " + formatDate(localdays[i].time) + "\tAchat à " + formatMontant(localdays[i].low) + "\t-> " + formatCoin(btc);
+                            usd = 0;
+                            nbOp++;
+                        }
                     } else if (usd == 0 && (moyHigh[i] < localdays[i].high) && (moyHigh[i + 1] > localdays[i + 1].high)) {
-                        usd = btc * localdays[i].high;
-                        message += "Le " + formatDate(localdays[i].time) + "\tVente à " + formatMontant(localdays[i].high) + "\t-> " + formatMontant(usd);
-                        btc = 0;
-                        nbOp++;
+                        var localCritere = 1;
+                        if (localdays[i].low > localdays[i + 1].low)
+                            localCritere++;
+                        var limite = (1 - limitPourcent) * (localdays[i].high - localdays[i].low) + localdays[i].low;
+                        if (localdays[i].close > limite)
+                            localCritere++;
+                        if (localCritere = nbCritere) {
+                            usd = btc * localdays[i].close;
+                            message += "Le " + formatDate(localdays[i].time) + "\tVente à " + formatMontant(localdays[i].high) + "\t-> " + formatMontant(usd);
+                            btc = 0;
+                            nbOp++;
+                        }
                     }
                     if (message != "") {
                         //console.log(message);
@@ -243,65 +148,6 @@
                 document.getElementById("info").innerHTML += "<br /><br />Résultat " + total + " en "
                         + nbOp + " opérations en " + currnbjrs + " jours soit tous les "
                         + moyjrs + " jours et " + pourcent + " % de gains en moyenne.";
-            }
-
-            /**
-             * 
-             * @param {type} url
-             * @param {type} ret
-             * @returns {undefined}
-             */
-            function getJson(url, ret) {
-                // console.log("getJson ->" + url)
-                /* Appel AJAX vers cryptocompare.com */
-                var ajax = new XMLHttpRequest();
-                //console.log("getJson : readyState après new : " + ajax.readyState);
-                /* Détection de l'avancement de l'appel */
-                ajax.onreadystatechange = function () {
-                    //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
-                }
-                /* Détection de la fin de l'appel */
-                ajax.onload = function () {
-                    //console.log("getJson : Appel AJAX terminé");
-                    //console.log("  status : " + this.status);
-                    //console.log("  response : " + this.response);
-                    if (this.status == 200) {
-                        /* Le service a bien répondu */
-                        try {
-                            var json = JSON.parse(this.response);
-                            var datas = json.Data;
-                            if (json.Data.Data)
-                                datas = json.Data.Data;
-                            if (datas.length) {
-                                for (var i = 0; i < datas.length; i++) {
-                                    ret[i] = datas[i];
-                                }
-                            } else {
-                                Object.keys(datas).forEach(key => {
-                                    ret.push(datas[key].symbol);
-                                })
-                            }
-                        } catch (err) {
-                            //document.getElementById("statresult").style.visibility = "hidden";
-                            console.log("getJson : Retour JSON incorrect ->" + url);
-                            return false;
-                        }
-                    }
-                }
-                /* Détection du timeout */
-                ajax.ontimeout = function () {
-                    //document.getElementById("statresult").style.visibility = "hidden";
-                    console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
-                    /* Relancer l'appel 5 secondes plus tard */
-                    setTimeout(function () {
-                        getJson(url, ret);
-                    }, 5000);
-                }
-                /* Préparation de la requête et envoi */
-                ajax.open("GET", url, true);
-                ajax.timeout = 1000;
-                /* Délai d'expiration à 1 seconde */
-                ajax.send();
             }
 
             /**
@@ -516,7 +362,11 @@
                         moyLow[l - 1] = cumulLow / nbjr;
                     }
                 }
-                calcul(localDays, moyLow, moyHigh, document.getElementById("sommedepart").value, document.getElementById("tripstart").value);
+
+                var sommedepart = document.getElementById("sommedepart").value;
+                var tripstart = document.getElementById("tripstart").value;
+                var nbcriteres = tripstart = document.getElementById("nbcriteres").value;
+                calcul(localDays, moyLow, moyHigh, sommedepart, tripstart, nbcriteres);
                 affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low, formatDate(localDays[localDays.length - 2].time));
                 affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high, formatDate(localDays[localDays.length - 2].time));
                 affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1], formatDate(localDays[localDays.length - 2].time));
@@ -543,18 +393,36 @@
                     if ((i < localDays.length - 1) && (localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
                         var current = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
                         lastAchat = localDays[i].low;
-                        a1 = "achat (" + current + "%)";
-                        if(localDays[i].high<localDays[i+1].high) { a1 = a1 + "++"; }
-                        else { a1 = a1 + "--"; }
+                        a1 = "achat (" + current + "%) +";
+                        if (localDays[i].high < localDays[i + 1].high) {
+                            a1 = a1 + "+";
+                        } else {
+                            a1 = a1 + "-";
+                        }
+                        var limite = limitPourcent * (localDays[i].high - localDays[i].low) + localDays[i].low;
+                        if (localDays[i].close < limite) {
+                            a1 = a1 + "+";
+                        } else {
+                            a1 = a1 + "-";
+                        }
                         if (i == localDays.length - 1)
                             notifyMe("Achat interressant !!!")
                     }
                     if ((i < localDays.length - 1) && (localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
                         var current = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
                         lastVente = localDays[i].high;
-                        a2 = "vente (" + current + "%)";
-                        if(localDays[i].low<localDays[i+1].low) {a2 = a2 + "--";}
-                        else {a2 = a2 + "++";}
+                        a2 = "vente (" + current + "%) +";
+                        if (localDays[i].low < localDays[i + 1].low) {
+                            a2 = a2 + "-";
+                        } else {
+                            a2 = a2 + "+";
+                        }
+                        var limite = (1 - limitPourcent) * (localDays[i].high - localDays[i].low) + localDays[i].low;
+                        if (localDays[i].close > limite) {
+                            a2 = a2 + "+";
+                        } else {
+                            a2 = a2 + "-";
+                        }
                         if (i == localDays.length - 1)
                             notifyMe("Vente interressante !!!")
                     }
@@ -613,21 +481,6 @@
                 google.charts.setOnLoadCallback(function () {
                     drawChart(inputs, options);
                 });
-            }
-
-            function affichageTexte(box, zone, inPrevious, inCurrent, previousDate) {
-                document.getElementById(zone).innerHTML = "<small><small>" + previousDate + "</small> " + formatMontant(inPrevious) + "</small>";
-                if (inPrevious < inCurrent) {
-                    document.getElementById(zone).innerHTML += "↗";
-                    document.getElementById(box).style.backgroundColor = "#29b84c";
-                } else if (inPrevious > inCurrent) {
-                    document.getElementById(zone).innerHTML += "↘";
-                    document.getElementById(box).style.backgroundColor = "#c81111";
-                } else {
-                    document.getElementById(zone).innerHTML += " ➔";
-                    document.getElementById(box).style.backgroundColor = "#0c83b6";
-                }
-                document.getElementById(zone).innerHTML += "<br />" + formatMontant(inCurrent);
             }
 
             /**
@@ -704,51 +557,6 @@
                 toDo();
             }
 
-            /**
-             * 
-             * @returns {undefined}
-             */
-            function notifyMe(mess) {
-
-                // Check the last call
-                if (typeof notifyMe.lastCall == 'undefined') {
-                    // It has not... perform the initialization
-                    notifyMe.lastCall = Date.now();
-                }
-
-                // Next notify in 5 minutes
-                if (notifyMe.lastCall > Date.now() - 5 * 60 * 1000)
-                    return;
-                notifyMe.lastCall = Date.now();
-
-                if (!window.Notification) {
-                    console.log('Browser does not support notifications.');
-                } else {
-                    // check if permission is already granted
-                    if (Notification.permission === 'granted') {
-                        // show notification here
-                        var notify = new Notification('Attention !!', {
-                            body: mess,
-                            icon: 'https://bit.ly/2DYqRrh',
-                        });
-                    } else {
-                        // request permission from user
-                        Notification.requestPermission().then(function (p) {
-                            if (p === 'granted') {
-                                // show notification here
-                                var notify = new Notification('Attention !!', {
-                                    body: mess,
-                                    icon: 'https://bit.ly/2DYqRrh',
-                                });
-                            } else {
-                                console.log('User blocked notifications.');
-                            }
-                        }).catch(function (err) {
-                            console.error(err);
-                        });
-                    }
-                }
-            }
 
         </script>
     </head>
@@ -764,7 +572,7 @@
                         <option value="XRP">Ripple</option>
                         <option value="BCH">Bitcoin Cash</option>
                         <option value="LINK">Chain Link</option>
-                        <option value="XLM" selected>Lumen</option>
+                        <option value="XLM">Lumen</option>
                         <option value="XMR">Monero</option>
                         <option value="DASH">Dash</option>
                         <option value="BAT">BAT</option>
@@ -798,7 +606,11 @@
             <table>
                 <tr><th align="left">Paramètres simulation</th><th align="left">Résultat</th></tr>
                 <tr>
-                    <td>Somme de départ <input type="number" id="sommedepart" name="sommedepart" min="1" max="100" size="1"> Date de Départ <input type="date" id="tripstart" name="tripstart" value="2018-07-22" min="2010-01-01" max="2021-12-31"></td>
+                    <td>Somme de départ <input type="number" id="sommedepart" name="sommedepart" min="1" max="100" size="1">
+                        <br/>Date de Départ <input type="date" id="tripstart" name="tripstart" value="2018-07-22" min="2010-01-01" max="2021-12-31">
+                        <br/>Nb critères <input type="number" id="nbcriteres" name="nbcriteres" min="1" max="3" size="1" value="3">
+                        <br/>Pourcentage pour le 3eme critère : <script type="text/javascript">document.write(100 * limitPourcent+ "%"); </script>
+                    </td>
                     <td><div id="resultcadre"><div id="result">Attendez</div></div></td>
                 </tr>
             </table>
@@ -830,6 +642,6 @@
             <div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
             <div id="info"></div>
         </div>
-        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.8 27/10/2020</div>
+        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.9.25 27/10/2020</div>
     </body>
 </html>
