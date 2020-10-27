@@ -92,8 +92,7 @@
              * @returns {undefined}
              */
             function calcul(localdays, moyLow, moyHigh, usd, start, nbCritere) {
-                let timestart = new Date(start);
-                //console.log(timestart.getTime());
+                var timestart = new Date(start);
                 document.getElementById("info").innerHTML = ""; // vidage de l'info
                 if (usd == 0)
                     return;
@@ -143,11 +142,11 @@
                 var moyjrs = Math.round(currnbjrs / nbOp) + 1;
                 var pourcent = Math.exp(Math.log(total / usdstart) / (nbOp - 1)) - 1;
                 total = formatMontant(total);
-                document.getElementById("result").innerHTML = total;
                 pourcent = Math.round(10000 * pourcent) / 100;
-                document.getElementById("info").innerHTML += "<br /><br />Résultat " + total + " en "
-                        + nbOp + " opérations en " + currnbjrs + " jours soit tous les "
-                        + moyjrs + " jours et " + pourcent + " % de gains en moyenne.";
+                document.getElementById("result").innerHTML = total
+                    + "<br />avec " + nbOp + " opérations en " + currnbjrs + " jours"
+                    + "<br />soit tous les " + moyjrs + " jours"
+                    + "<br />" + pourcent + " % de gains en moyenne.";
             }
 
             /**
@@ -365,7 +364,7 @@
 
                 var sommedepart = document.getElementById("sommedepart").value;
                 var tripstart = document.getElementById("tripstart").value;
-                var nbcriteres = tripstart = document.getElementById("nbcriteres").value;
+                var nbcriteres = document.getElementById("nbcriteres").value;
                 calcul(localDays, moyLow, moyHigh, sommedepart, tripstart, nbcriteres);
                 affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low, formatDate(localDays[localDays.length - 2].time));
                 affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high, formatDate(localDays[localDays.length - 2].time));
@@ -611,7 +610,7 @@
                         <br/>Nb critères <input type="number" id="nbcriteres" name="nbcriteres" min="1" max="3" size="1" value="3">
                         <br/>Pourcentage pour le 3eme critère : <script type="text/javascript">document.write(100 * limitPourcent+ "%"); </script>
                     </td>
-                    <td><div id="resultcadre"><div id="result">Attendez</div></div></td>
+                    <td><div id="resultcadre"><div id="result" style="font-weight: bold; font-size: 20px;">Attendez</div></div></td>
                 </tr>
             </table>
             <h2 id="monH1">Cours en temps réel</h2>
@@ -642,6 +641,6 @@
             <div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
             <div id="info"></div>
         </div>
-        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.9.25 27/10/2020</div>
+        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.9.35 27/10/2020</div>
     </body>
 </html>
