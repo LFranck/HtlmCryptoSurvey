@@ -4,7 +4,7 @@
  * @param {type} param
  * @returns {String}
  */
-function constructUrl(func, param) {
+function constructUrl(func, coin, currency, exchange, param) {
     var url = "https://min-api.cryptocompare.com/data/"
     url += func;
     url += "?fsym=" + coin;
@@ -15,7 +15,7 @@ function constructUrl(func, param) {
     if (exchange != "")
         url += "&e=" + exchange;
     url += "&" + param;
-    //console.log(url);
+    url += "&rand=" + Math.round(100000 * Math.random());
     return url;
 }
 
@@ -53,7 +53,7 @@ function formatMontant(m) {
     if (currency == 'USD') {
         a = 'us-US';
     }
-    var intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency, maximumSignificantDigits: 4});
+    var intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency, maximumFractionDigits: 5});
     return intlN.format(m);
 }
 
@@ -245,3 +245,34 @@ function affichageTexte(box, zone, inPrevious, inCurrent, previousDate) {
     document.getElementById(zone).innerHTML += "<br />" + formatMontant(inCurrent);
 }
 
+/**
+ * 
+ * @param {type} texte
+ * @returns {undefined}
+ */
+function popup(texte) {
+    // ouvre une fenetre sans barre d'etat, ni d'ascenceur
+    w = open("", 'popup', 'width=400,height=200,toolbar=no,scrollbars=no,resizable=yes');
+    w.document.write("<title>Résultat de la simulation</title>");
+    w.document.write("<body>" + texte + "</body>");
+    w.document.close();
+}
+
+/**
+ * 
+ * @param {type} test
+ * @param {type} out
+ * @returns {undefined}
+ */
+function traitePlus(test, out) {
+    if (out == undefined) {
+        out.texte = "";
+        out.compteur = 0;
+    }
+    if (test) {
+        out.text += "+";
+        out.compteur++;
+    } else {
+        out.text += "-";
+    }
+}
