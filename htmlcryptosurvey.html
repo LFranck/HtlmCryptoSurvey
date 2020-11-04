@@ -1,12 +1,7 @@
 <html>
     <head>
         <title>Cours en temps réel (Prototype)</title>
-        <meta charset="UTF-8">
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="-1" />
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
         <style type="text/css">  
             div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
                 margin: 5px;
@@ -42,7 +37,7 @@
                 padding:5px;
                 margin:10px;
                 font-size: 15px;
-            }
+            } 
         </style>
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
         <script type="text/javascript">
@@ -52,13 +47,15 @@
                 chart.draw(data, options);
             }
         </script>
+        <script type="text/javascript" src="fonctions.js"></script>
         <script type="text/javascript">
             // Paramètres
-            var exchange = "kraken";
             var currency = "EUR";
             var coin = "XLM";
+            var limitPourcent = 0.30;
             var urlDay, urlPrice, urlHour;
-
+            var localDays = [], moyHigh = [], moyLow = [];
+            var message = "";
             // Gestion interval
             var refreshUrlPrice, refreshUrlHour, refreshUrlDay;
 
@@ -67,22 +64,6 @@
             //var urlPrice = contructUrl("price", "allData=true");
             //https://min-api.cryptocompare.com/data/v2/histominute?fsym=BTC&tsym=GBP&limit=10
             //var urlExchangeList = "https://min-api.cryptocompare.com/data/exchange/list";
-
-
-
-            function constructUrl(func, param) {
-                var url = "https://min-api.cryptocompare.com/data/"
-                url += func;
-                url += "?fsym=" + coin;
-                if (func == 'price')
-                    url += "&tsyms=" + currency;
-                else
-                    url += "&tsym=" + currency;
-                if (exchange != "")
-                    url += "&e=" + exchange;
-                url += "&" + param;
-                return url;
-            }
 
             // GetCours
             var jsonBlochainList = [];
@@ -97,182 +78,9 @@
             var currentHigh = 0, currentLow = 0;
             var valuesLow = [];
             var valuesHigh = [];
-            /**
-             * Formatage de la date
-             * @param {type} d
-             * @returns {String}
-             */
-            function formatDate(d) {
-                var dt = new Date();
-                dt.setTime(1000 * d);
-                return dt.toLocaleDateString('fr-FR', {timeZone: 'UTC'});
-            }
 
             /**
-             * Calcul la moyenne des valeurs contenues dans le tableau a
-             * @param {array} a
-             * @returns {Number}
-             */
-            function numAverage(a) {
-                var b = a.length, c = 0, i;
-                for (i = 0; i < b; i++) {
-                    c += Number(a[i]);
-                }
-                return c / b;
-            }
-
-            /**
-             * 
-             * @param {type} m
-             * @returns {unresolved}
-             */
-            function formatMontant(m) {
-                var a = 'fr-FR';
-                if (currency == 'USD') {
-                    a = 'us-US';
-                }
-                var intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency, maximumSignificantDigits: 4});
-                return intlN.format(m);
-            }
-
-            /**
-             * 
-             * @param {type} m
-             * @returns {String}
-             */
-            function formatCoin(m) {
-                var intlN = new Intl.NumberFormat();
-                return intlN.format(m) + " " + coin;
-            }
-
-            /**
-             * 
-             * @param {type} UNIX_timestamp
-             * @returns {String}
-             */
-            function timeConverter(UNIX_timestamp, complet) {
-                var a = new Date(UNIX_timestamp * 1000);
-                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                var year = a.getFullYear();
-                var month = months[a.getMonth()];
-                var date = a.getDate();
-                var hour = a.getHours();
-                if (hour < 10)
-                    hour = "0" + hour;
-                var min = a.getMinutes();
-                if (min < 10)
-                    min = "0" + min;
-                var sec = a.getSeconds();
-                if (sec < 10)
-                    sec = "0" + sec;
-                var time = date + ' ' + month;
-                if (complet)
-                    time = date + ' ' + month + ' ' + hour + ':' + min + ':' + sec;
-                return time;
-            }
-
-            /**
-             * 
-             * @param {type} entry
-             * @param {type} nbJrs
-             * @returns {undefined}
-             */
-            function calcul(localdays, moyLow, moyHigh, usd, start) {
-                let timestart = new Date(start);
-                //console.log(timestart.getTime());
-                document.getElementById("info").innerHTML = ""; // vidage de l'info
-                if (usd == 0)
-                    return;
-                var usdstart = usd;
-                var btc = 0;
-                var nbOp = 0;
-
-                var message = "";
-                for (var i = 0; i < localdays.length - 1; i++) {
-                    if (localdays[i].time < timestart.getTime() / 1000)
-                        continue;
-                    if (btc == 0 && (moyLow[i] > localdays[i].low) && (moyLow[i + 1] < localdays[i + 1].low)) {
-                        btc = usd / localdays[i].low;
-                        message += "Le " + formatDate(localdays[i].time) + "\tAchat à " + formatMontant(localdays[i].low) + "\t-> " + formatCoin(btc);
-                        usd = 0;
-                        nbOp++;
-                    } else if (usd == 0 && (moyHigh[i] < localdays[i].high) && (moyHigh[i + 1] > localdays[i + 1].high)) {
-                        usd = btc * localdays[i].high;
-                        message += "Le " + formatDate(localdays[i].time) + "\tVente à " + formatMontant(localdays[i].high) + "\t-> " + formatMontant(usd);
-                        btc = 0;
-                        nbOp++;
-                    }
-                    if (message != "") {
-                        //console.log(message);
-                        document.getElementById("info").innerHTML += "<br />" + message;
-                    }
-                    message = "";
-                }
-                var total = (btc == 0) ? usd : btc * localdays[localdays.length - 1].high;
-                var currnbjrs = Math.round((Date.now() - timestart) / 1000 / 3600 / 24);
-                var moyjrs = Math.round(currnbjrs / nbOp) + 1;
-                var pourcent = Math.exp(Math.log(total / usdstart) / (nbOp-1))-1;
-                total = formatMontant(total);
-                pourcent = Math.round(10000*pourcent)/100;
-                document.getElementById("info").innerHTML += "<br /><br />Résultat " + total + " en "
-                        + nbOp + " opérations en " + currnbjrs + " jours soit tous les "
-                        + moyjrs + " jours et " + pourcent + " % de gains en moyenne.";
-            }
-
-            /**
-             * 
-             * @param {type} url
-             * @param {type} ret
-             * @returns {undefined}
-             */
-            function getJson(url, ret) {
-                //console.log("getJson ->" + url)
-                /* Appel AJAX vers cryptocompare.com */
-                var ajax = new XMLHttpRequest();
-                //console.log("getJson : readyState après new : " + ajax.readyState);
-                /* Détection de l'avancement de l'appel */
-                ajax.onreadystatechange = function () {
-                    //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
-                }
-                /* Détection de la fin de l'appel */
-                ajax.onload = function () {
-                    //console.log("getJson : Appel AJAX terminé");
-                    //console.log("  status : " + this.status);
-                    //console.log("  response : " + this.response);
-                    if (this.status == 200) {
-                        /* Le service a bien répondu */
-                        try {
-                            var json = JSON.parse(this.response);
-                            var datas = json.Data;
-                            if (json.Data.Data)
-                                datas = json.Data.Data;
-                            for (var i = 0; i < datas.length; i++) {
-                                ret[i] = datas[i];
-                            }
-                            //console.log(ret);
-                        } catch (err) {
-                            console.log("getJson : Retour JSON incorrect ->" + url);
-                            return false;
-                        }
-                    }
-                }
-                /* Détection du timeout */
-                ajax.ontimeout = function () {
-                    console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
-                    /* Relancer l'appel 5 secondes plus tard */
-                    setTimeout(function () {
-                        getJson(url, ret);
-                    }, 5000);
-                }
-                /* Préparation de la requête et envoi */
-                ajax.open("GET", url, true);
-                ajax.timeout = 1000;
-                /* Délai d'expiration à 1 seconde */
-                ajax.send();
-            }
-
-            /**
-             * Récupère la liste des coins pour les mettres dans le select
+             * Récupère la liste des coins pour les mettre dans le select
              * @param {type} url
              * @returns {undefined}
              */
@@ -332,7 +140,6 @@
                     var lastDate;
                     //console.log("getCours : Appel AJAX terminé");
                     //console.log("  status : " + this.status);
-                    //console.log("  response : " + this.response);
                     //console.log("  response : " + this.response);
                     if (this.status == 200) {
                         /* Le service a bien répondu */
@@ -423,74 +230,14 @@
              * 
              * @returns {undefined}
              */
-            function getDays() {
-                /*
-                 * Traitement
-                 * @type String
-                 */
-                //console.log("getDays");
-                //console.log(jsonHours);
-                if (jsonDays.length == 0)
-                    return;
-                //console.log(jsonDays[jsonDays.length - 1]);
-
-                // Parcours les données des dernières heures pour compléter le tableau               
-                var highToday = 0;
-                var lowToday = 0;
-                //console.log(jsonDays);
-                //console.log(jsonHours);
-                for (var i = 0; i < jsonHours.length; i++) {
-                    if (jsonHours[i].time > jsonDays[jsonDays.length - 1].time) {
-                        if (highToday == 0 || highToday < jsonHours[i].high)
-                            highToday = jsonHours[i].high;
-                        if (lowToday == 0 || lowToday > jsonHours[i].low)
-                            lowToday = jsonHours[i].low;
-                    }
-                }
-
-                //console.log(lowToday + " < " + highToday);
-                //console.log(highToday);
-                //console.log(lowToday);
-
-                var localDays = JSON.parse(JSON.stringify(jsonDays));
-                /*
-                 var myObj = {
-                 "time": Date.now() / 1000,
-                 "low": lowToday, //your artist variable
-                 "high": highToday   //your title variable
-                 };
-                 localDays.push(myObj);
-                 */
-
-                //console.log("getDays : " + jsonDays[jsonDays.length - 2].high + " -> " + jsonDays[jsonDays.length - 1].high);
-                //console.log("getDays : " + localDays[localDays.length - 2].high + " -> " + localDays[localDays.length - 1].high);
-
-                var moyHigh = [], moyLow = [];
-                for (var i = 0; i < localDays.length; i++) {
-                    moyHigh[i] = 0;
-                    moyLow[i] = 0;
-                }
-                for (var k = 0; k < localDays.length; k++) {
-                    var cumulHigh = 0, cumulLow = 0;
-                    for (var l = k; l < k + nbjr; l++) {
-                        if (l < localDays.length) {
-                            cumulHigh += localDays[l].high;
-                            cumulLow += localDays[l].low;
-                        }
-                    }
-                    if (l - 1 < localDays.length) {
-                        moyHigh[l - 1] = cumulHigh / nbjr;
-                        moyLow[l - 1] = cumulLow / nbjr;
-                    }
-                }
-                calcul(localDays, moyLow, moyHigh, document.getElementById("sommedepart").value, document.getElementById("tripstart").value);
-                affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low);
-                affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high);
-                affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1]);
-                affichageTexte("highcadreavg", "highavg", moyHigh[moyHigh.length - 2], moyHigh[moyHigh.length - 1]);
-
+            function affichageCourbes() {
+                console.log("affichageCourbes");
                 var inputs = [];
                 var colons = []
+                var nbCritere = document.getElementById("nbcriteres").value;
+                var limitPourcent = document.getElementById("pccriteres").value;
+                var affi = document.getElementById("saff").value;
+
                 colons.push('Date');
                 colons.push('Low');
                 colons.push({role: 'annotation'});
@@ -499,27 +246,62 @@
                 colons.push('Moy Low');
                 colons.push('Moy High');
                 colons.push('Now');
+                colons.push({role: 'annotation'});
+
                 var lastAchat = 0;
                 var lastVente = 0;
-                for (var i = localDays.length - affi * 2; i < localDays.length; i++) {
-                    if (inputs.length == affi)
+                var a1, a2, a3;
+                var start = localDays.length - affi * 2;
+                if (start < 0)
+                    start = 0;
+                for (var i = start; i < localDays.length; i++) {
+                    var a1 = undefined, a2 = undefined, a3 = undefined;
+                    // Si le nombre d'entrée dépasse la longueur de l'affichage
+                    if (inputs.length == affi) {
+                        // On enlève un élément
                         inputs.shift();
-                    var a1 = undefined, a2 = undefined;
-                    var ligne = [];
-
-                    if ((i < localDays.length - 1) && (localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
-                        var current = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
-                        lastAchat = localDays[i].low;
-                        a1 = "achat (" + current + "%)";
-                        if (i == localDays.length - 1)
-                            notifyMe("Achat interressant !!!")
                     }
-                    if ((i < localDays.length - 1) && (localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
-                        var current = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
-                        lastVente = localDays[i].high;
-                        a2 = "vente (" + current + "%)";
-                        if (i == localDays.length - 1)
-                            notifyMe("Vente interressante !!!")
+                    var ligne = [];
+                    if (i < localDays.length-1) {
+                        // Calcul des critères pour l'achat
+                        var currentachat = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
+                        var resultachat = {text: "achat (" + currentachat + "%) ", compteur: 0};
+                        var limiteachat = (limitPourcent / 100) * (localDays[i].high - localDays[i].low) + localDays[i].low;
+                        if((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
+                            traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
+                            traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
+                            traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
+                            traitePlus(localDays[i + 1].close < limiteachat, resultachat);
+                            if (resultachat.compteur >= nbCritere) {
+                                lastAchat = localDays[i].low;
+                                a1 = resultachat.text;
+                                if (i == localDays.length - 1)
+                                    notifyMe("Achat interressant !!!");
+                            }
+                        }
+                        // Calcul des critères pour la vente
+                        var currentvente = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
+                        var resultvente = {text: "vente (" + currentvente + "%) ", compteur: 0};
+                        var limitevente = (1 - limitPourcent / 100) * (localDays[i].high - localDays[i].low) + localDays[i].low;
+                        if((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])){
+                            traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
+                            traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
+                            traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
+                            traitePlus(localDays[i + 1].close > limitevente, resultvente);
+                            if (resultvente.compteur >= nbCritere) {
+                                lastVente = localDays[i].high;
+                                a2 = resultvente.text;
+                                if (i == localDays.length - 1)
+                                    notifyMe("Vente interressante !!!");
+                            }
+                        }
+                    }
+                    // Si dernière entrée
+                    if (i == localDays.length - 1) {
+                        // Calcul du pourcentage courant
+                        var tmp = (localDays[i].close - localDays[i].low) / (localDays[i].high - localDays[i].low);
+                        tmp = Math.round(100 * tmp);
+                        a3 = tmp + "%";
                     }
 
                     ligne.push(timeConverter(localDays[i].time, false));
@@ -530,6 +312,7 @@
                     ligne.push(moyLow[i]);
                     ligne.push(moyHigh[i]);
                     ligne.push(jsonCours[jsonCours.length - 1].close);
+                    ligne.push(a3);
                     inputs.push(ligne);
                 }
                 // Rajoute les entêtes
@@ -548,10 +331,10 @@
                             stroke: '#888',
                             // Thickness of the box outline.
                             strokeWidth: 1,
-                            // x-radius of the corner curvature.
-                            rx: 10,
+                            // x-radius of the corner curvature.sbitcoin
+                            rx: 5,
                             // y-radius of the corner curvature.
-                            ry: 10,
+                            ry: 5,
                             // Attributes for linear gradient fill.
                             gradient: {
                                 // Start color for gradient.
@@ -578,19 +361,57 @@
                 });
             }
 
-            function affichageTexte(box, zone, inPrevious, inCurrent) {
-                document.getElementById(zone).innerHTML = "<small><small>hier</small> : " + formatMontant(inPrevious) + "</small>";
-                if (inPrevious < inCurrent) {
-                    document.getElementById(zone).innerHTML += "↗";
-                    document.getElementById(box).style.backgroundColor = "#29b84c";
-                } else if (inPrevious > inCurrent) {
-                    document.getElementById(zone).innerHTML += "↘";
-                    document.getElementById(box).style.backgroundColor = "#c81111";
-                } else {
-                    document.getElementById(zone).innerHTML += " ➔";
-                    document.getElementById(box).style.backgroundColor = "#0c83b6";
+
+            /**
+             * 
+             * @returns {undefined}
+             */
+            function getDays() {
+                //console.log("getDays");
+                //console.log(jsonHours);
+                if (jsonDays.length == 0)
+                    return;
+                //console.log(jsonDays[jsonDays.length - 1]);
+
+                // Parcours les données des dernières heures pour compléter le tableau               
+                var highToday = 0;
+                var lowToday = 0;
+                for (var i = 0; i < jsonHours.length; i++) {
+                    if (jsonHours[i].time > jsonDays[jsonDays.length - 1].time) {
+                        if (highToday == 0 || highToday < jsonHours[i].high)
+                            highToday = jsonHours[i].high;
+                        if (lowToday == 0 || lowToday > jsonHours[i].low)
+                            lowToday = jsonHours[i].low;
+                    }
                 }
-                document.getElementById(zone).innerHTML += "<br />" + formatMontant(inCurrent);
+
+                localDays = JSON.parse(JSON.stringify(jsonDays));
+
+                for (var i = 0; i < localDays.length; i++) {
+                    moyHigh[i] = 0;
+                    moyLow[i] = 0;
+                }
+                for (var k = 0; k < localDays.length; k++) {
+                    var cumulHigh = 0, cumulLow = 0;
+                    for (var l = k; l < k + nbjr; l++) {
+                        if (l < localDays.length) {
+                            cumulHigh += localDays[l].high;
+                            cumulLow += localDays[l].low;
+                        }
+                    }
+                    if (l - 1 < localDays.length) {
+                        moyHigh[l - 1] = cumulHigh / nbjr;
+                        moyLow[l - 1] = cumulLow / nbjr;
+                    }
+                }
+
+                var nbcriteres = document.getElementById("nbcriteres").value;
+                limitPourcent = document.getElementById("pccriteres").value;
+                affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low, formatDate(localDays[localDays.length - 2].time));
+                affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high, formatDate(localDays[localDays.length - 2].time));
+                affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1], formatDate(localDays[localDays.length - 2].time));
+                affichageTexte("highcadreavg", "highavg", moyHigh[moyHigh.length - 2], moyHigh[moyHigh.length - 1], formatDate(localDays[localDays.length - 2].time));
+
             }
 
             /**
@@ -610,9 +431,11 @@
                 var inPrevious = jsonCours[0].close;
                 var inCurrent = jsonCours[jsonCours.length - 1].close;
                 // Afficher
-                affichageTexte("bitcoin", "cours", inPrevious, inCurrent);
-
+                affichageTexte("bitcoin", "cours", inPrevious, inCurrent, hourConverter(jsonCours[0].time));
                 document.querySelector("div#horo").innerHTML = "MàJ " + timeConverter(jsonCours[jsonCours.length - 1].time, true);
+                document.getElementById("statresult").style.visibility = "visible";
+                document.getElementById("bg_mask").style.visibility = "hidden";
+                affichageCourbes();
             }
 
             /**
@@ -620,6 +443,13 @@
              * @returns {undefined}
              */
             function toDo() {
+                console.log("toDo");
+                var exchange = document.getElementById("exchange").value;
+                var coin = document.getElementById("scoin").value;
+                var currency = document.getElementById("scurrency").value;
+                document.getElementById("statresult").style.visibility = "hidden";
+                document.getElementById("bg_mask").style.visibility = "visible";
+
                 // Annulation des elements précédent
                 clearInterval(refreshUrlPrice);
                 clearInterval(refreshUrlHour);
@@ -629,7 +459,7 @@
                 jsonDays = [];
 
                 // Le cours chaque minutes
-                urlPrice = constructUrl("histominute", "limit=10");
+                urlPrice = constructUrl("histominute", coin, currency, exchange, "limit=10");
                 //console.log("urlPrice = " + urlPrice);
                 getJson(urlPrice, jsonCours);
                 refreshUrlPrice = setInterval(function () {
@@ -637,7 +467,7 @@
                 }, 30000);
 
                 // Le cours des derniers jours
-                urlHour = constructUrl("histohour", "limit=24")
+                urlHour = constructUrl("histohour", coin, currency, exchange, "limit=24")
                 //console.log("urlHour = " + urlHour);
                 getJson(urlHour, jsonHours);
                 refreshUrlHour = setInterval(function () {
@@ -645,7 +475,7 @@
                 }, 30000);
 
                 // Le cours des derniers jours
-                urlDay = constructUrl("histoday", "allData=true");
+                urlDay = constructUrl("histoday", coin, currency, exchange, "allData=true");
                 //console.log("urlDay = " + urlDay);
                 getJson(urlDay, jsonDays);
                 refreshUrlDay = setInterval(function () {
@@ -657,123 +487,73 @@
             }
 
             window.onload = function () {
+                console.log("onload");
+                // Initialisation du select des coins
+                //getJson("https://min-api.cryptocompare.com/data/blockchain/list?api_key=1a01edc67d71cef22b5f25b5b439fb9d512a339d7ac223f02d93d34dc3635a32", testjson);
+                // Tâches à faire
                 toDo();
             }
-
-            /**
-             * 
-             * @returns {undefined}
-             */
-            function notifyMe(mess) {
-
-                // Check the last call
-                if (typeof notifyMe.lastCall == 'undefined') {
-                    // It has not... perform the initialization
-                    notifyMe.lastCall = Date.now();
-                }
-
-                // Next notify in 5 minutes
-                if (notifyMe.lastCall > Date.now() - 5 * 60 * 1000)
-                    return;
-                notifyMe.lastCall = Date.now();
-
-                if (!window.Notification) {
-                    console.log('Browser does not support notifications.');
-                } else {
-                    // check if permission is already granted
-                    if (Notification.permission === 'granted') {
-                        // show notification here
-                        var notify = new Notification('Attention !!', {
-                            body: mess,
-                            icon: 'https://bit.ly/2DYqRrh',
-                        });
-                    } else {
-                        // request permission from user
-                        Notification.requestPermission().then(function (p) {
-                            if (p === 'granted') {
-                                // show notification here
-                                var notify = new Notification('Attention !!', {
-                                    body: mess,
-                                    icon: 'https://bit.ly/2DYqRrh',
-                                });
-                            } else {
-                                console.log('User blocked notifications.');
-                            }
-                        }).catch(function (err) {
-                            console.error(err);
-                        });
-                    }
-                }
-            }
-
         </script>
     </head>
     <body>
         <table width="100%">
             <tr><th align="left">Choix statistiques</th><th align="left">Paramètres</th></tr>
             <tr><td>
-                    <select id="sbitcoin" onChange="coin = this.value; toDo();" size="5">
-                        <option value="BTC">Bitcoin</option>
+                    Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange="todo();"/><br />
+                    <select id="scoin" size="5" onChange="coin = this.value; toDo();" >
+                        <option value="BTC" selected>Bitcoin</option>
                         <option value="ETH">Ethereum</option>
+                        <option value="USDT">Tehter USD</option>
                         <option value="XRP">Ripple</option>
-                        <option value="XLM" selected>Lumen</option>
+                        <option value="BCH">Bitcoin Cash</option>
+                        <option value="LINK">Chain Link</option>
+                        <option value="XLM">Lumen</option>
                         <option value="XMR">Monero</option>
                         <option value="DASH">Dash</option>
+                        <option value="BAT">BAT</option>
                     </select> 
-                    <select id="scurrency" onChange="currency = this.value; toDo();" size="5">
+                    <select id="scurrency" onChange="currency = this.value;
+                            toDo();" size="5">
                         <option value="USD">USD</option>
                         <option value="EUR" selected>EUR</option>
                     </select> 
-                    <select id="sexchange" onChange="exchange = this.value; toDo();" size="5">
-                        <option value="kraken" selected>Kraken</option>
-                        <option value="binance">Binance</option>
-                        <option value="coinbase">Coinbase</option>
-                        <option value="gemini">Gemini</option>
-                    </select> 
                 </td>
                 <td>
-                    <br />Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" onChange="nbjr = parseInt(this.value); toDo();"> jours
-                    <br />Affichage historique sur <input type="number" min="5" id="saff" value="15" onChange="affi = parseInt(this.value);
-                            if (affi < 1)
-                                alert('Ni nul ni négatif !!');
-                            else
-                                toDo();" size="1"> jours
+                    <br />Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" size="1" onChange="nbjr = parseInt(this.value);
+                            getDays();
+                            affichageCourbes();"> jours
+                    <br />Pourcentage pour le 4eme critère <input type="number" id="pccriteres" name="pccriteres" min="5" max="100" step="5" size="1" value="30" onChange="getDays();
+                            affichageCourbes();">
+                    <br />Nb critères à prendre en compte <input type="number" id="nbcriteres" name="nbcriteres" min="1" max="4" size="1" value="3" onChange="getDays();
+                            affichageCourbes();">
                 </td>
-            </tr>
-            <tr><th align="left">Paramètres simulation</th><th align="left">Résultat</th></tr>
-            <tr>
-                <td>Somme de départ <input type="number" id="sommedepart" name="sommedepart" min="1" max="100"> Date de Départ <input type="date" id="tripstart" name="tripstart" value="2018-07-22" min="2010-01-01" max="2021-12-31"></td>
-                <td><div id="resultcadre"><div id="result">Attendez</div></div></td>
             </tr>
         </table>
-        <h2 id="monH1">Cours en temps réel</h2>
-        <table>
-            <tr><th>Low</th><th>Cours</th><th>High</th></tr>
-            <tr>
-                <td>
-                    <div id="lowcadre"><div id="low"></div></div>
-                    <div id="lowcadreavg"><div id="lowavg"></div></div>
+        <div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img src="loading.gif" /></div>
+        <div id="statresult" style="hidden">
+            <h2 id="monH1">Cours en temps réel</h2>
+            <table>
+                <tr><th>Low</th><th>Cours</th><th>High</th></tr>
+                <tr>
+                    <td>
+                        <div id="lowcadre"><div id="low"></div></div>
+                        <div id="lowcadreavg"><div id="lowavg"></div></div>
+                    </td>
+                    <td>
+                        <div id="bitcoin"><div id="cours"></div></div>
+                <center><div id="horo"></div></center>
                 </td>
                 <td>
-                    <div id="bitcoin"><div id="cours"></div></div>
-            <center><div id="horo"></div></center>
-        </td>
-        <td>
-            <div id="highcadre"><div id="high"></div></div>
-            <div id="highcadreavg"><div id="highavg"></div></div>
-        </td>
-    </tr>
-    <tr><th>Low Average</th><th></th><th>High Average</th></tr>
-    <tr>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr><td colspan="3"></td></tr>
-</table>
-
-<div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
-<div id="info"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.4 25/10/2020</div>
-</body>
+                    <div id="highcadre"><div id="high"></div></div>
+                    <div id="highcadreavg"><div id="highavg"></div></div>
+                </td>
+                </tr>
+                <tr><th>Low Average</th><th></th><th>High Average</th></tr>
+            </table>
+            <div id="curve_chart" style="width: 1200px; height: 600px;align-items: center;"></div>
+            <br />Affichage historique sur <input type="number" min="5" id="saff" value="15" onChange="affichageCourbes();" size="1"> jours
+            <div id="info"></div>
+        </div>
+        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.02 01/11/2020</div>
+    </body>
 </html>
