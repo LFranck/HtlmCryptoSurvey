@@ -262,18 +262,18 @@
                         inputs.shift();
                     }
                     var ligne = [];
-                    if (i < localDays.length-1) {
+                    if (i < localDays.length - 1) {
                         // Calcul des critères pour l'achat
                         var currentachat = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
                         var resultachat = {text: "achat (" + currentachat + "%) ", compteur: 0};
-                        var limiteachat = (limitPourcent / 100) * (localDays[i].high - localDays[i].low) + localDays[i].low;
-                        if((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
+                        var limiteachat = (limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
+                        if ((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
                             traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
                             traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
                             traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
                             traitePlus(localDays[i + 1].close < limiteachat, resultachat);
                             if (resultachat.compteur >= nbCritere) {
-                                lastAchat = localDays[i].low;
+                                lastAchat = localDays[i].close;
                                 a1 = resultachat.text;
                                 if (i == localDays.length - 1)
                                     notifyMe("Achat interressant !!!");
@@ -282,14 +282,14 @@
                         // Calcul des critères pour la vente
                         var currentvente = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
                         var resultvente = {text: "vente (" + currentvente + "%) ", compteur: 0};
-                        var limitevente = (1 - limitPourcent / 100) * (localDays[i].high - localDays[i].low) + localDays[i].low;
-                        if((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])){
+                        var limitevente = (1 - limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
+                        if ((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
                             traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
                             traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
                             traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
                             traitePlus(localDays[i + 1].close > limitevente, resultvente);
                             if (resultvente.compteur >= nbCritere) {
-                                lastVente = localDays[i].high;
+                                lastVente = localDays[i].close;
                                 a2 = resultvente.text;
                                 if (i == localDays.length - 1)
                                     notifyMe("Vente interressante !!!");
@@ -554,6 +554,6 @@
             <br />Affichage historique sur <input type="number" min="5" id="saff" value="15" onChange="affichageCourbes();" size="1"> jours
             <div id="info"></div>
         </div>
-        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.03 01/11/2020</div>
+        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.07 04/11/2020</div>
     </body>
 </html>
