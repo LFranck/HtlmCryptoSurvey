@@ -1,4 +1,4 @@
-<html lang="en">
+<html lang="fr">
 <head>
     <title>Cours en temps réel (Prototype)</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
@@ -248,7 +248,7 @@
             if (start < 0)
                 start = 0;
             for (var i = start; i < localDays.length; i++) {
-                var a1=undefined, a2=undefined, a3=undefined;
+                var a1 = undefined, a2 = undefined, a3 = undefined;
                 // Si le nombre d'entrée dépasse la longueur de l'affichage
                 if (inputs.length == affi) {
                     // On enlève un élément
@@ -502,12 +502,19 @@
             <select id="scoin" size="5" onChange="coin = this.value; toDo();">
                 <option value="BTC" selected>Bitcoin</option>
                 <option value="ETH">Ethereum</option>
+                <option value="LTC">LTC</option>
                 <option value="USDT">Tehter USD</option>
                 <option value="XRP">Ripple</option>
                 <option value="BCH">Bitcoin Cash</option>
+                <option value="EOS">EOS</option>
+                <option value="XTZ">XTZ</option>
+                <option value="ADA">ADA</option>
                 <option value="LINK">Chain Link</option>
                 <option value="XLM">Lumen</option>
                 <option value="XMR">Monero</option>
+                <option value="TRX">TRX</option>
+                <option value="ETC">ETC</option>
+                <option value="USDC">USDC</option>
                 <option value="DASH">Dash</option>
                 <option value="BAT">BAT</option>
             </select>
@@ -577,6 +584,6 @@
                                          size="1"> jours
     <div id="info"></div>
 </div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.10 07/11/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.11 08/11/2020</div>
 </body>
 </html>
