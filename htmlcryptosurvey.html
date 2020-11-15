@@ -4,8 +4,6 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <style type="text/css">
         div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
-            margin: 5px;
-            padding: 5px;
             font-size: 25px;
             line-height: 30px;
             min-height: 60px;
@@ -13,11 +11,14 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-            padding-top: 0;
+            margin: 5px auto 5px 5px;
+            padding: 0 5px 5px;
             text-align: center;
             position: relative;
+        }
+
+        div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
+            margin-left: auto;
         }
 
         div#horo {
@@ -45,17 +46,14 @@
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
         function drawChart(values, options) {
-            var data = google.visualization.arrayToDataTable(values);
-            var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+            let data = google.visualization.arrayToDataTable(values);
+            let chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
             chart.draw(data, options);
         }
     </script>
     <script type="text/javascript" src="fonctions.js"></script>
     <script type="text/javascript">
         // Paramètres
-        var currency = "EUR";
-        var coin = "XLM";
-        var limitPourcent = 0.30;
         var urlDay, urlPrice, urlHour;
         var localDays = [], moyHigh = [], moyLow = [];
         // Gestion interval
@@ -225,7 +223,7 @@
          * @returns {undefined}
          */
         function affichageCourbes() {
-            console.log("affichageCourbes");
+            //console.log("affichageCourbes");
             var inputs = [];
             var colons = [];
             var nbCritere = document.getElementById("nbcriteres").value;
@@ -306,7 +304,7 @@
                 ligne.push(moyHigh[i]);
                 ligne.push(jsonCours[jsonCours.length - 1].close);
                 ligne.push(a3);
-                console.log(ligne);
+                //console.log(ligne);
                 inputs.push(ligne);
             }
             // Rajoute les entêtes
@@ -370,9 +368,9 @@
             //console.log(jsonDays[jsonDays.length - 1]);
 
             // Parcours les données des dernières heures pour compléter le tableau
-            var highToday = 0;
-            var lowToday = 0;
-            for (var i = 0; i < jsonHours.length; i++) {
+            let highToday = 0;
+            let lowToday = 0;
+            for (let i = 0; i < jsonHours.length; i++) {
                 if (jsonHours[i].time > jsonDays[jsonDays.length - 1].time) {
                     if ((0 == highToday) || (highToday < jsonHours[i].high))
                         highToday = jsonHours[i].high;
@@ -383,13 +381,14 @@
 
             localDays = JSON.parse(JSON.stringify(jsonDays));
 
-            for (var i = 0; i < localDays.length; i++) {
+            for (let i = 0; i < localDays.length; i++) {
                 moyHigh[i] = 0;
                 moyLow[i] = 0;
             }
             for (var k = 0; k < localDays.length; k++) {
-                var cumulHigh = 0, cumulLow = 0;
-                for (var l = k; l < k + nbjr; l++) {
+                let l;
+                let cumulHigh = 0, cumulLow = 0;
+                for (l = k; l < k + nbjr; l++) {
                     if (l < localDays.length) {
                         cumulHigh += localDays[l].high;
                         cumulLow += localDays[l].low;
@@ -401,12 +400,12 @@
                 }
             }
 
-            var nbcriteres = document.getElementById("nbcriteres").value;
             limitPourcent = document.getElementById("pccriteres").value;
-            affichageTexte("lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low, formatDate(localDays[localDays.length - 2].time));
-            affichageTexte("highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high, formatDate(localDays[localDays.length - 2].time));
-            affichageTexte("lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1], formatDate(localDays[localDays.length - 2].time));
-            affichageTexte("highcadreavg", "highavg", moyHigh[moyHigh.length - 2], moyHigh[moyHigh.length - 1], formatDate(localDays[localDays.length - 2].time));
+            currency = document.getElementById("scurrency").value;
+            affichageTexte(currency, "lowcadre", "low", localDays[localDays.length - 2].low, localDays[localDays.length - 1].low, formatDate(localDays[localDays.length - 2].time));
+            affichageTexte(currency, "highcadre", "high", localDays[localDays.length - 2].high, localDays[localDays.length - 1].high, formatDate(localDays[localDays.length - 2].time));
+            affichageTexte(currency, "lowcadreavg", "lowavg", moyLow[moyLow.length - 2], moyLow[moyLow.length - 1], formatDate(localDays[localDays.length - 2].time));
+            affichageTexte(currency, "highcadreavg", "highavg", moyHigh[moyHigh.length - 2], moyHigh[moyHigh.length - 1], formatDate(localDays[localDays.length - 2].time));
         }
 
         /**
@@ -423,10 +422,11 @@
                 return;
             }
 
-            var inPrevious = jsonCours[0].close;
-            var inCurrent = jsonCours[jsonCours.length - 1].close;
+            let inPrevious = jsonCours[0].close;
+            let inCurrent = jsonCours[jsonCours.length - 1].close;
+            let currency = document.getElementById("scurrency").value;
             // Afficher
-            affichageTexte("bitcoin", "cours", inPrevious, inCurrent, hourConverter(jsonCours[0].time));
+            affichageTexte(currency, "bitcoin", "cours", inPrevious, inCurrent, hourConverter(jsonCours[0].time));
             document.querySelector("div#horo").innerHTML = "MàJ " + timeConverter(jsonCours[jsonCours.length - 1].time, true);
             document.getElementById("statresult").style.visibility = "visible";
             document.getElementById("bg_mask").style.visibility = "hidden";
@@ -438,7 +438,7 @@
          * @returns {undefined}
          */
         function toDo() {
-            console.log("toDo");
+            //console.log("toDo");
             var exchange = document.getElementById("exchange").value;
             var coin = document.getElementById("scoin").value;
             var currency = document.getElementById("scurrency").value;
@@ -482,7 +482,7 @@
         }
 
         window.onload = function () {
-            console.log("onload");
+            //console.log("onload");
             // Initialisation du select des coins
             //getJson("https://min-api.cryptocompare.com/data/blockchain/list?api_key=1a01edc67d71cef22b5f25b5b439fb9d512a339d7ac223f02d93d34dc3635a32", testjson);
             // Tâches à faire
@@ -500,23 +500,33 @@
         <td>
             Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange="todo();"/><br/>
             <select id="scoin" size="5" onChange="coin = this.value; toDo();">
-                <option value="BTC" selected>Bitcoin</option>
-                <option value="ETH">Ethereum</option>
-                <option value="LTC">LTC</option>
-                <option value="USDT">Tehter USD</option>
-                <option value="XRP">Ripple</option>
-                <option value="BCH">Bitcoin Cash</option>
-                <option value="EOS">EOS</option>
-                <option value="XTZ">XTZ</option>
                 <option value="ADA">ADA</option>
+                <option value="AAVE">AAVE</option>
+                <option value="ALGO">ALGO</option>
+                <option value="BAT">BAT</option>
+                <option value="BCH">Bitcoin Cash</option>
+                <option value="BNB">BNB</option>
+                <option value="BTC" selected>Bitcoin</option>
+                <option value="DASH">Dash</option>
+                <option value="DOT">DOT</option>
+                <option value="ETC">ETC</option>
+                <option value="ETH">Ethereum</option>
+                <option value="EOS">EOS</option>
+                <option value="ICX">ICX</option>
+                <option value="LEND">LEND</option>
                 <option value="LINK">Chain Link</option>
+                <option value="LTC">LTC</option>
+                <option value="QNT">QNT</option>
+                <option value="RLC">RLC</option>
+                <option value="SXP">SXP</option>
+                <option value="TRB">TRB</option>
+                <option value="TRX">TRX</option>
+                <option value="USDC">USDC</option>
+                <option value="USDT">Tehter USD</option>
                 <option value="XLM">Lumen</option>
                 <option value="XMR">Monero</option>
-                <option value="TRX">TRX</option>
-                <option value="ETC">ETC</option>
-                <option value="USDC">USDC</option>
-                <option value="DASH">Dash</option>
-                <option value="BAT">BAT</option>
+                <option value="XRP">Ripple</option>
+                <option value="XTZ">XTZ</option>
             </select>
             <select id="scurrency" onChange="currency = this.value;
                             toDo();" size="5">
@@ -584,6 +594,6 @@
                                          size="1"> jours
     <div id="info"></div>
 </div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.11 08/11/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.13 15/11/2020</div>
 </body>
 </html>
