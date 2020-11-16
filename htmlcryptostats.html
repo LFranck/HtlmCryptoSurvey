@@ -1,235 +1,276 @@
 <html>
-    <head>
-        <title>Cours en temps réel (Prototype)</title>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-        <style type="text/css">  
-            .myOtherTable { background-color:#FFFFE0;border-collapse:collapse;color:#000;font-size:13px; }
-            .myOtherTable th { background-color:#BDB76B;color:white;width:40%; }
-            .myOtherTable td, .myOtherTable th { padding:4px;border:0; }
-            .myOtherTable td { border-bottom:1px dotted #BDB76B; }
-        </style>
-        <script type="text/javascript" src="fonctions.js"></script>
-        <script type="text/javascript">
-            // Paramètres
-            var currency, coin, limitPourcent, urlDay;
-            var localDays = [], moyHigh = [], moyLow = [];
-            var message = "";
-            // Gestion interval
-            var refreshUrlDay;
-            // GetCours
-            var jsonDays = [];
+<head>
+    <title>Cours en temps réel (Prototype)</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+        .myOtherTable {
+            background-color: #FFFFE0;
+            border-collapse: collapse;
+            color: #000;
+            font-size: 13px;
+        }
 
-            /**
-             * 
-             * @param {type} localdays
-             * @param {type} start
-             * @param {type} nbCritere
-             * @param {type} limitPourcent
-             * @param {type} nbjr
-             * @returns {Number}
-             */
-            function calcul(localdays, start, nbCritere, limitPourcent, nbjr, out) {
-                //console.log("calcul ->"+localdays.length+", "+start+", "+nbCritere+", "+limitPourcent+", "+nbjr);
-                var timestart = new Date(start);
-                var usd = 1; // Valeur de départ
-                var btc = 0; // Valeur en coin
-                var nbOp = 0; // Nombre d'opération
+        .myOtherTable th {
+            background-color: #BDB76B;
+            color: white;
+            width: 40%;
+        }
 
-                // Calcul de la moyenne glissante
-                var moyHigh = [], moyLow = [];
-                // initialisation des tableaux
-                for (var i = 0; i < localdays.length; i++) {
-                    moyHigh[i] = 0;
-                    moyLow[i] = 0;
-                }
-                // calcul des moyennes glissantes sur 'nbjr' jours
-                for (var k = 0; k < localdays.length; k++) {
-                    var l = k, cumulHigh = 0, cumulLow = 0;
-                    for (l = k; l < k + nbjr; l++) {
-                        if (l < localdays.length) {
-                            cumulHigh += localdays[l].high;
-                            cumulLow += localdays[l].low;
-                        }
+        .myOtherTable td, .myOtherTable th {
+            padding: 4px;
+            border: 0;
+        }
+
+        .myOtherTable td {
+            border-bottom: 1px dotted #BDB76B;
+        }
+    </style>
+    <script type="text/javascript" src="fonctions.js"></script>
+    <script type="text/javascript">
+        // Paramètres
+        var currency, coin, limitPourcent, urlDay;
+        var localDays = [], moyHigh = [], moyLow = [];
+        var message = "";
+        // Gestion interval
+        var refreshUrlDay;
+        // GetCours
+        var jsonDays = [];
+
+        /**
+         *
+         * @param {type} localdays
+         * @param {type} start
+         * @param {type} nbCritere
+         * @param {type} limitPourcent
+         * @param {type} nbjr
+         * @returns {Number}
+         */
+        function calcul(localdays, start, nbCritere, limitPourcent, nbjr, out) {
+            //console.log("calcul ->"+localdays.length+", "+start+", "+nbCritere+", "+limitPourcent+", "+nbjr);
+            var timestart = new Date(start);
+            var usd = 1; // Valeur de départ
+            var btc = 0; // Valeur en coin
+            var nbOp = 0; // Nombre d'opération
+
+            // Calcul de la moyenne glissante
+            var moyHigh = [], moyLow = [];
+            // initialisation des tableaux
+            for (var i = 0; i < localdays.length; i++) {
+                moyHigh[i] = 0;
+                moyLow[i] = 0;
+            }
+            // calcul des moyennes glissantes sur 'nbjr' jours
+            for (var k = 0; k < localdays.length; k++) {
+                var l = k, cumulHigh = 0, cumulLow = 0;
+                for (l = k; l < k + nbjr; l++) {
+                    if (l < localdays.length) {
+                        cumulHigh += localdays[l].high;
+                        cumulLow += localdays[l].low;
                     }
-                    if (l - 1 < localdays.length) {
-                        moyHigh[l - 1] = cumulHigh / nbjr;
-                        moyLow[l - 1] = cumulLow / nbjr;
-                    }
                 }
+                if (l - 1 < localdays.length) {
+                    moyHigh[l - 1] = cumulHigh / nbjr;
+                    moyLow[l - 1] = cumulLow / nbjr;
+                }
+            }
 
-                for (var i = 0; i < localdays.length - 1; i++) {
-                    // est on dans la période demandée
-                    if (localdays[i].time < timestart.getTime() / 1000)
-                        continue;
-                    if (btc == 0 && (moyLow[i] > localdays[i].low) && (moyLow[i + 1] < localdays[i + 1].low)) {
+            for (var i = 0; i < localdays.length - 1; i++) {
+                // est on dans la période demandée
+                if (localdays[i].time < timestart.getTime() / 1000)
+                    continue;
+                if (btc == 0 && (moyLow[i] > localdays[i].low) && (moyLow[i + 1] < localdays[i + 1].low)) {
+                    var localCritere = 0;
+                    // Critere 1 : si les valeurs basse montent, achat potentiel
+                    if (localdays[i].low < localdays[i + 1].low)
+                        localCritere++;
+                    // Critere 2 : si les valeurs haute montent, achat potentiel
+                    if (localdays[i].high < localdays[i + 1].high)
+                        localCritere++;
+                    // Critère 3 : les valeurs se croisent avec la moyenne
+                    if ((moyLow[i] > localdays[i].low) && (moyLow[i + 1] < localdays[i + 1].low))
+                        localCritere++;
+                    // Critère 4 : si la valeur d'achat est dans la limite avec la valeur basse de référence
+                    var limite = (limitPourcent / 100) * (localdays[i + 1].high - localdays[i + 1].low) + localdays[i + 1].low;
+                    if (localdays[i + 1].close < limite)
+                        localCritere++;
+                    // Si le nombre de critères vérifiés est au moins égal à la cible : achat
+                    if (localCritere >= nbCritere) {
+                        btc = usd / localdays[i + 1].close;
+                        //console.log("btc -> usd "+btc+"->"+usd);
+                        usd = 0;
+                        nbOp++;
+                    }
+                } else {
+                    if (usd == 0 && (moyHigh[i] < localdays[i].high) && (moyHigh[i + 1] > localdays[i + 1].high)) {
                         var localCritere = 0;
-                        // Critere 1 : si les valeurs basse montent, achat potentiel
-                        if (localdays[i].low < localdays[i + 1].low)
+                        // Critere 1 :  si les valeurs haute descendent, vente potentielle
+                        if (localdays[i].high > localdays[i + 1].high)
                             localCritere++;
-                        // Critere 2 : si les valeurs haute montent, achat potentiel
-                        if (localdays[i].high < localdays[i + 1].high)
+                        // Critere 2 : si les valeurs basse descendent, vente potentielle
+                        if (localdays[i].low > localdays[i + 1].low)
                             localCritere++;
                         // Critère 3 : les valeurs se croisent avec la moyenne
-                        if ((moyLow[i] > localdays[i].low) && (moyLow[i + 1] < localdays[i + 1].low))
+                        if ((moyHigh[i] < localdays[i].high) && (moyHigh[i + 1] > localdays[i + 1].high))
                             localCritere++;
-                        // Critère 4 : si la valeur d'achat est dans la limite avec la valeur basse de référence
-                        var limite = (limitPourcent / 100) * (localdays[i + 1].high - localdays[i + 1].low) + localdays[i + 1].low;
-                        if (localdays[i + 1].close < limite)
+                        // Critère 4 : si la valeur de vente est dans la limite avec la valeur haute de référence
+                        var limite = (1 - limitPourcent / 100) * (localdays[i + 1].high - localdays[i + 1].low) + localdays[i + 1].low;
+                        if (limite < localdays[i + 1].close)
                             localCritere++;
-                        // Si le nombre de critères vérifiés est au moins égal à la cible : achat
+                        // Si le nombre de critères vérifiés est au moins égal à la cible : vente
                         if (localCritere >= nbCritere) {
-                            btc = usd / localdays[i + 1].close;
-                            //console.log("btc -> usd "+btc+"->"+usd);
-                            usd = 0;
+                            usd = btc * localdays[i + 1].close;
+                            //console.log("usd -> btc "+usd+"->"+btc);
+                            btc = 0;
                             nbOp++;
                         }
-                    } else {
-                        if (usd == 0 && (moyHigh[i] < localdays[i].high) && (moyHigh[i + 1] > localdays[i + 1].high)) {
-                            var localCritere = 0;
-                            // Critere 1 :  si les valeurs haute descendent, vente potentielle
-                            if (localdays[i].high > localdays[i + 1].high)
-                                localCritere++;
-                            // Critere 2 : si les valeurs basse descendent, vente potentielle
-                            if (localdays[i].low > localdays[i + 1].low)
-                                localCritere++;
-                            // Critère 3 : les valeurs se croisent avec la moyenne
-                            if ((moyHigh[i] < localdays[i].high) && (moyHigh[i + 1] > localdays[i + 1].high))
-                                localCritere++;
-                            // Critère 4 : si la valeur de vente est dans la limite avec la valeur haute de référence
-                            var limite = (1 - limitPourcent / 100) * (localdays[i + 1].high - localdays[i + 1].low) + localdays[i + 1].low;
-                            if (limite < localdays[i + 1].close)
-                                localCritere++;
-                            // Si le nombre de critères vérifiés est au moins égal à la cible : vente
-                            if (localCritere >= nbCritere) {
-                                usd = btc * localdays[i + 1].close;
-                                //console.log("usd -> btc "+usd+"->"+btc);
-                                btc = 0;
-                                nbOp++;
-                            }
-                        }
                     }
                 }
-                var total = (btc == 0) ? usd : btc * localdays[localdays.length - 1].high;
-                //var pourcent = (nbOp < 2) ? 0 : Math.exp(Math.log(total / usdstart) / (nbOp - 1)) - 1;
-                out.total = Math.round(total);
-                if (total < 1000)
-                    out.total = Math.round(10 * total) / 10;
-                if (total < 100)
-                    out.total = Math.round(100 * total) / 100;
-                if (total < 10)
-                    out.total = Math.round(1000 * total) / 1000;
-                if (total < 1)
-                    out.total = Math.round(10000 * total) / 10000;
-                out.oper = nbOp;
-                return out.total + "(" + nbOp + ")"; //Math.round(100 * pourcent) * 100;
             }
+            var total = (btc == 0) ? usd : btc * localdays[localdays.length - 1].high;
+            //var pourcent = (nbOp < 2) ? 0 : Math.exp(Math.log(total / usdstart) / (nbOp - 1)) - 1;
+            out.total = Math.round(total);
+            if (total < 1000)
+                out.total = Math.round(10 * total) / 10;
+            if (total < 100)
+                out.total = Math.round(100 * total) / 100;
+            if (total < 10)
+                out.total = Math.round(1000 * total) / 1000;
+            if (total < 1)
+                out.total = Math.round(10000 * total) / 10000;
+            out.oper = nbOp;
+            return out.total + "(" + nbOp + ")"; //Math.round(100 * pourcent) * 100;
+        }
 
-            /**
-             * 
-             * @returns {undefined}
-             */
-            function printArrays() {
-                //console.log("printArrays");
-                var tripstart = document.getElementById("tripstart").value;
-                var nbJoursMax = 10;
-                var message = "";
-                // Nombre de critères
-                for (var nbcriteres = 1; nbcriteres < 5; nbcriteres++) {
-                    message += "<br /><table class='myOtherTable'>";
-                    message += "<caption>Multiplication avec " + nbcriteres + " / 4 critères vérifiés (nombre d'opération).</caption>";
-                    message += "<tr><th>Limite\\Moy</th>";
+        /**
+         *
+         * @returns {undefined}
+         */
+        function printArrays() {
+            //console.log("printArrays");
+            var tripstart = document.getElementById("tripstart").value;
+            var nbJoursMax = 10;
+            var message = "";
+            // Nombre de critères
+            for (var nbcriteres = 1; nbcriteres < 5; nbcriteres++) {
+                message += "<br /><table class='myOtherTable'>";
+                message += "<caption>Multiplication avec " + nbcriteres + " / 4 critères vérifiés (nombre d'opération).</caption>";
+                message += "<tr><th>Limite\\Moy</th>";
+                for (var nbjours = 2; nbjours < nbJoursMax + 1; nbjours++) {
+                    message += "<th>" + nbjours + " jours</th>";
+                }
+                message += "</tr>";
+                // Pourcentage limite
+                var max = 0;
+                var joursmax = 0;
+                var pourcentmax = 0;
+                for (var pourcent = 1; pourcent < 21; pourcent++) {
+                    message += "<tr><th>" + (pourcent * 5) + "%</th>";
                     for (var nbjours = 2; nbjours < nbJoursMax + 1; nbjours++) {
-                        message += "<th>" + nbjours + " jours</th>";
+                        var out = {};
+                        var result = calcul(jsonDays, tripstart, nbcriteres, pourcent * 5, nbjours, out);
+                        message += "<td style='text-align:right'>" + result + "</td>";
+                        if (out.total >= max) {
+                            pourcentmax = pourcent * 5;
+                            joursmax = nbjours;
+                            max = out.total;
+                        }
                     }
                     message += "</tr>";
-                    // Pourcentage limite
-                    var max = 0;
-                    var joursmax = 0;
-                    var pourcentmax = 0;
-                    for (var pourcent = 1; pourcent < 21; pourcent++) {
-                        message += "<tr><th>" + (pourcent * 5) + "%</th>";
-                        for (var nbjours = 2; nbjours < nbJoursMax + 1; nbjours++) {
-                            var out = {};
-                            var result = calcul(jsonDays, tripstart, nbcriteres, pourcent * 5, nbjours, out);
-                            message += "<td style='text-align:right'>" + result + "</td>";
-                            if (out.total >= max) {
-                                pourcentmax = pourcent * 5;
-                                joursmax = nbjours;
-                                max = out.total;
-                            }
-                        }
-                        message += "</tr>";
-                    }
-                    message += "</table><h4>Multiplicateur max = " + max + " ( " + nbcriteres + " critère(s) minimun, moyenne de " + joursmax + " jours , " + pourcentmax + "% minimum pour le mouvement)</h4>";
                 }
-                return message;
+                message += "</table><h4>Multiplicateur max = " + max + " ( " + nbcriteres + " critère(s) minimun, moyenne de " + joursmax + " jours , " + pourcentmax + "% minimum pour le mouvement)</h4>";
             }
+            return message;
+        }
 
-            function getJson2(urlDay, jsonDays) {
-                //console.log("getJson2 ->" + urlDay + " = " + jsonDays.length);
-                if (jsonDays.length > 0) {
-                    clearInterval(refreshUrlDay);
-                    document.getElementById("statresult").innerHTML = printArrays();
-                    document.getElementById("statresult").style.visibility = "visible";
-                    document.getElementById("bg_mask").style.visibility = "hidden";
-                } else {
-                    getJson(urlDay, jsonDays);
-                    refreshUrlDay = setInterval(function () {
-                        //console.log("setInterval");
-                        getJson2(urlDay, jsonDays);
-                    }, 5000);
-                }
-            }
-            /**
-             * Mets à jours les tableaux contenants les valeurs
-             * @returns {undefined}
-             */
-            function toDo() {
+        function getJson2(urlDay, jsonDays) {
+            //console.log("getJson2 ->" + urlDay + " = " + jsonDays.length);
+            if (jsonDays.length > 0) {
                 clearInterval(refreshUrlDay);
-                coin = document.getElementById("sbitcoin").value;
-                exchange = document.getElementById("exchange").value;
-                currency = document.getElementById("scurrency").value;
-                document.getElementById("statresult").style.visibility = "hidden";
-                document.getElementById("bg_mask").style.visibility = "visible";
-                // Annulation des elements précédent
-                jsonDays = [];
-                // Le cours des derniers jours
-                urlDay = constructUrl("histoday", coin, currency, exchange, "allData=true");
-                getJson2(urlDay, jsonDays);
+                document.getElementById("statresult").innerHTML = printArrays();
+                document.getElementById("statresult").style.visibility = "visible";
+                document.getElementById("bg_mask").style.visibility = "hidden";
+            } else {
+                getJson(urlDay, jsonDays);
+                refreshUrlDay = setInterval(function () {
+                    //console.log("setInterval");
+                    getJson2(urlDay, jsonDays);
+                }, 5000);
             }
+        }
 
-            window.onload = function () {
-                toDo();
-            }
-        </script>
-    </head>
-    <body>
-        <table width="100%">
-            <tr><th align="left">Choix statistiques</th><th align="left">Paramètres</th></tr>
-            <tr><td>
-                    Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange="toDo();"/><br />
-                    Date de Départ <input type="date" id="tripstart" name="tripstart" value="2010-01-01" min="2010-01-01" max="2021-12-31" onchange="toDo();">
-                    <select id="sbitcoin" size="5" onChange="toDo();" >
-                        <option value="BTC" selected>Bitcoin</option>
-                        <option value="ETH">Ethereum</option>
-                        <option value="XRP">Ripple</option>
-                        <option value="BCH">Bitcoin Cash</option>
-                        <option value="LINK">Chain Link</option>
-                        <option value="XLM">Lumen</option>
-                        <option value="XMR">Monero</option>
-                        <option value="DASH">Dash</option>
-                        <option value="BAT">BAT</option>
-                    </select> 
-                    <select id="scurrency" onChange="toDo();" size="5">
-                        <option value="USD">USD</option>
-                        <option value="EUR" selected>EUR</option>
-                    </select> 
-                </td>
-            </tr>
-        </table>
-        <div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img src="loading.gif" /></div>
-        <div id="statresult" style="hidden">
-        </div>
-        <div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.14 04/11/2020</div>
-    </body>
+        /**
+         * Mets à jours les tableaux contenants les valeurs
+         * @returns {undefined}
+         */
+        function toDo() {
+            clearInterval(refreshUrlDay);
+            coin = document.getElementById("sbitcoin").value;
+            exchange = document.getElementById("exchange").value;
+            currency = document.getElementById("scurrency").value;
+            document.getElementById("statresult").style.visibility = "hidden";
+            document.getElementById("bg_mask").style.visibility = "visible";
+            // Annulation des elements précédent
+            jsonDays = [];
+            // Le cours des derniers jours
+            urlDay = constructUrl("histoday", coin, currency, exchange, "allData=true");
+            getJson2(urlDay, jsonDays);
+        }
+
+        window.onload = function () {
+            toDo();
+        }
+    </script>
+</head>
+<body>
+<table width="100%">
+    <tr>
+        <th align="left">Choix statistiques</th>
+        <th align="left">Paramètres</th>
+    </tr>
+    <tr>
+        <td>
+            Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange="toDo();"/><br/>
+            Date de Départ <input type="date" id="tripstart" name="tripstart" value="2010-01-01" min="2010-01-01"
+                                  max="2021-12-31" onchange="toDo();">
+            <select id="sbitcoin" size="5" onChange="toDo();">
+                <option value="ADA">ADA</option>
+                <option value="AAVE">AAVE</option>
+                <option value="ALGO">ALGO</option>
+                <option value="BAT">BAT</option>
+                <option value="BCH">Bitcoin Cash</option>
+                <option value="BNB">BNB</option>
+                <option value="BTC" selected>Bitcoin</option>
+                <option value="DASH">Dash</option>
+                <option value="DOT">DOT</option>
+                <option value="ETC">ETC</option>
+                <option value="ETH">Ethereum</option>
+                <option value="EOS">EOS</option>
+                <option value="ICX">ICX</option>
+                <option value="LEND">LEND</option>
+                <option value="LINK">Chain Link</option>
+                <option value="LTC">LTC</option>
+                <option value="QNT">QNT</option>
+                <option value="RLC">RLC</option>
+                <option value="SXP">SXP</option>
+                <option value="TRB">TRB</option>
+                <option value="TRX">TRX</option>
+                <option value="USDC">USDC</option>
+                <option value="USDT">Tehter USD</option>
+                <option value="XLM">Lumen</option>
+                <option value="XMR">Monero</option>
+                <option value="XRP">Ripple</option>
+                <option value="XTZ">XTZ</option>
+            </select>
+            <select id="scurrency" onChange="toDo();" size="5">
+                <option value="USD">USD</option>
+                <option value="EUR" selected>EUR</option>
+            </select>
+        </td>
+    </tr>
+</table>
+<div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img
+        src="loading.gif"/></div>
+<div id="statresult" style="visibility: hidden" />
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.17 15/11/2020</div>
+</body>
 </html>

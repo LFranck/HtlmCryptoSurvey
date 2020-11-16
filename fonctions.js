@@ -1,5 +1,5 @@
 /**
- * 
+ * version 2 15/11/2020
  * @param {type} func
  * @param {type} param
  * @returns {String}
@@ -44,16 +44,17 @@ function numAverage(a) {
 }
 
 /**
- * 
- * @param {type} m
- * @returns {unresolved}
+ *
+ * @param currency
+ * @param m
+ * @returns {string}
  */
-function formatMontant(m) {
+function formatMontant(currency, m) {
     var a = 'fr-FR';
-    if (currency == 'USD') {
+    if ('USD' == currency ) {
         a = 'us-US';
     }
-    var intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency, maximumFractionDigits: 5});
+    let intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency, maximumFractionDigits: 5});
     return intlN.format(m);
 }
 
@@ -222,16 +223,17 @@ function notifyMe(mess) {
 }
 
 /**
- * 
- * @param {type} box
- * @param {type} zone
- * @param {type} inPrevious
- * @param {type} inCurrent
- * @param {type} previousDate
- * @returns {undefined}
+ *
+ * @param currency
+ * @param box
+ * @param zone
+ * @param inPrevious
+ * @param inCurrent
+ * @param previousDate
  */
-function affichageTexte(box, zone, inPrevious, inCurrent, previousDate) {
-    document.getElementById(zone).innerHTML = "<small><small>" + previousDate + "</small> " + formatMontant(inPrevious) + "</small>";
+function affichageTexte(currency, box, zone, inPrevious, inCurrent, previousDate) {
+    //console.log("affichageTexte currency="+currency);
+    document.getElementById(zone).innerHTML = "<small><small>" + previousDate + "</small> " + formatMontant(currency, inPrevious) + "</small>";
     if (inPrevious < inCurrent) {
         document.getElementById(zone).innerHTML += "↗";
         document.getElementById(box).style.backgroundColor = "#29b84c";
@@ -242,7 +244,7 @@ function affichageTexte(box, zone, inPrevious, inCurrent, previousDate) {
         document.getElementById(zone).innerHTML += " ➔";
         document.getElementById(box).style.backgroundColor = "#0c83b6";
     }
-    document.getElementById(zone).innerHTML += "<br />" + formatMontant(inCurrent);
+    document.getElementById(zone).innerHTML += "<br />" + formatMontant(currency, inCurrent);
 }
 
 /**

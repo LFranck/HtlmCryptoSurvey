@@ -1,0 +1,276 @@
+<html lang="fr">
+<head>
+    <title>Cours en temps réel (Prototype)</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+        div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
+            font-size: 25px;
+            line-height: 30px;
+            min-height: 60px;
+            font-weight: bold;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px;
+            margin: 5px auto 5px 5px;
+            padding: 0 5px 5px;
+            display: inline-block;
+        }
+
+        div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
+            margin-left: auto;
+        }
+
+        div#horo {
+            right: 5px;
+            bottom: -21px;
+            font-size: 12px;
+        }
+
+        div#source {
+            font-size: 12px;
+            color: #999;
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+        }
+
+        div#info {
+            background-color: #eee;
+            min-height: 10px;
+            padding: 5px;
+            margin: 10px;
+            font-size: 15px;
+        }
+    </style>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        function drawChart(values, options) {
+            let data = google.visualization.arrayToDataTable(values);
+            let chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+            chart.draw(data, options);
+        }
+    </script>
+    <script type="text/javascript" src="fonctions.js"></script>
+    <script type="text/javascript">
+        // Liste of coin
+        let coinslist = ["ADA", "AAVE", "ALGO", "BAT", "BCH", "BNB", "BTC", "DASH", "DOT", "ETC", "ETH", "EOS", "ICX", "LEND", "LINK", "LTC", "QNT", "RLC", "SXP", "TRB", "TRX", "USDC", "USDT", "XLM", "XMR", "XRP", "XTZ"];
+
+        /**
+         **/
+        function printFrame(element) {
+            //console.log("printFrame -> "+element);
+            document.getElementById("statresult").innerHTML += printDiv(element, "Waiting");
+            document.getElementById("statresult").style.visibility = "visible";
+        }
+
+        /**
+         **/
+        function printDiv(element, texte) {
+            let result = "<div id='bitcoin'><div id='label'>" + element + "</div><div id='ele_" + element + "'>" + texte + "</div></div>";
+            return result;
+        }
+
+        // Gestion interval
+        var refreshUrlDay;
+
+        /**
+         *
+         * @param {type} url
+         * @param {type} element
+         * @returns {undefined}
+         */
+        function getJsonToElement(url, element) {
+            //console.log("getJson element -> " + element + " url -> " + url);
+            /* Appel AJAX vers cryptocompare.com */
+            var ajax = new XMLHttpRequest();
+            //console.log("getJson : readyState après new : " + ajax.readyState);
+            /* Détection de l'avancement de l'appel */
+            ajax.onreadystatechange = function () {
+                //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
+            }
+            /* Détection de la fin de l'appel */
+            ajax.onload = function () {
+                //console.log("getJson : Appel AJAX terminé pour " + element);
+                //console.log("  status : " + this.status);
+                //console.log("  response : " + this.response);
+                if (this.status == 200) {
+                    /* Le service a bien répondu */
+                    try {
+                        let json = JSON.parse(this.response);
+                        document.getElementById(element).innerHTML = doTheMath(json.Data);
+                    } catch (err) {
+                        //document.getElementById("statresult").style.visibility = "hidden";
+                        console.log("err -> " + err);
+                        return false;
+                    }
+                }
+            }
+            /* Détection du timeout */
+            ajax.ontimeout = function () {
+                console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                /* Relancer l'appel 5 secondes plus tard */
+                setTimeout(function () {
+                    getJson(url, element);
+                }, 5000);
+            }
+            /* Préparation de la requête et envoi */
+            ajax.open("GET", url, true);
+            ajax.timeout = 1000;
+            /* Délai d'expiration à 1 seconde */
+            ajax.send();
+        }
+
+        /**
+         *
+         * @returns {undefined}
+         */
+        function doTheMath(localDays) {
+            //console.log("doTheMath length = " + localDays.length);
+            if (0 == localDays.length) return;
+            let moyHigh = [];
+            let moyLow = [];
+            // Initialisation
+            for (let i = 0; i < localDays.length; i++) {
+                moyHigh[i] = 0;
+                moyLow[i] = 0;
+            }
+            let a1 = "", a2 = "";
+            let nbjr = document.getElementById("snbjr").value;
+            let limitPourcent = document.getElementById("pccriteres").value;
+            let nbCritere = document.getElementById("nbcriteres").value;
+
+            for (var k = 0; k < localDays.length; k++) {
+                let l;
+                let cumulHigh = 0, cumulLow = 0;
+                for (l = k; l < k + nbjr; l++) {
+                    if (l < localDays.length) {
+                        cumulHigh += localDays[l].high;
+                        cumulLow += localDays[l].low;
+                    }
+                }
+                if (l - 1 < localDays.length) {
+                    moyHigh[l - 1] = cumulHigh / nbjr;
+                    moyLow[l - 1] = cumulLow / nbjr;
+                }
+            }
+            let start = localDays.length - nbjr * 2;
+            if (start < 0) start = 0;
+            for (let i = start; i < localDays.length; i++) {
+                a1 = "";
+                a2 = "";
+                if (i < localDays.length - 1) {
+                    // Calcul des critères pour l'achat
+                    var resultachat = {text: "achat ", compteur: 0};
+                    var limiteachat = (limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
+                    if ((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
+                        traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
+                        traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
+                        traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
+                        traitePlus(localDays[i + 1].close < limiteachat, resultachat);
+                        if (resultachat.compteur >= nbCritere) {
+                            lastAchat = localDays[i].close;
+                            a1 = resultachat.text;
+                            // if (i == localDays.length - 1) notifyMe("Achat interressant !!!");
+                        }
+                    }
+                    // Calcul des critères pour la vente
+                    var resultvente = {text: "vente ", compteur: 0};
+                    var limitevente = (1 - limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
+                    if ((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
+                        traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
+                        traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
+                        traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
+                        traitePlus(localDays[i + 1].close > limitevente, resultvente);
+                        if (resultvente.compteur >= nbCritere) {
+                            lastVente = localDays[i].close;
+                            a2 = resultvente.text;
+                            //if (i == localDays.length - 1) notifyMe("Vente interressante !!!");
+                        }
+                    }
+                }
+            }
+            return a1 + "<br />" + a2;
+
+        }
+
+        /**
+         *
+         * @returns {undefined}
+         */
+        function setAffichage() {
+            //console.log("setAffichage");
+            getDays();
+            if (jsonCours == null) {
+                return;
+            }
+            if (jsonCours.length == 0) {
+                return;
+            }
+
+            let inPrevious = jsonCours[0].close;
+            let inCurrent = jsonCours[jsonCours.length - 1].close;
+            let currency = "EUR"; //document.getElementById("scurrency").value;
+            // Afficher
+            //affichageTexte(currency, "bitcoin", "cours", inPrevious, inCurrent, hourConverter(jsonCours[0].time));
+            document.querySelector("div#horo").innerHTML = "MàJ " + timeConverter(jsonCours[jsonCours.length - 1].time, true);
+            document.getElementById("statresult").style.visibility = "visible";
+            document.getElementById("bg_mask").style.visibility = "hidden";
+        }
+
+        /**
+         * Mets à jours les tableaux contenants les valeurs
+         * @returns {undefined}
+         */
+        function toDo() {
+            console.log("toDo");
+            var exchange = "kraken";
+            var currency = "EUR"; //document.getElementById("scurrency").value;
+            clearInterval(refreshUrlDay);
+            // Le cours des derniers jours
+            // getJson(urlDay, jsonDays);
+            let currentIdx = 0;
+            let test = 0;
+            refreshUrlDay = setInterval(function () {
+                //console.log("refreshUrlDay -> "+currentIdx);
+                if (currentIdx >= coinslist.length) currentIdx = 0;
+                let urlDay = constructUrl("histoday", coinslist[currentIdx], currency, exchange, "allData=true");
+                getJsonToElement(urlDay, "ele_" + coinslist[currentIdx]);
+                // Next
+                currentIdx++;
+            }, 5000);
+        }
+
+        window.onload = function () {
+            console.log("onload");
+            coinslist.forEach(element => printFrame(element));
+            toDo();
+        }
+    </script>
+</head>
+<body>
+<table width="100%">
+    <tr>
+        <th align="left">Choix statistiques</th>
+        <th align="left">Paramètres</th>
+    </tr>
+    <tr>
+        <td>
+            Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange=""/><br/>
+            <input type="radio" name="scurrency" value="USD">USD</radio>
+            <input type="radio" name="scurrency" value="EUR" checked>EUR</radio>
+            </radiogroup>
+        </td>
+        <td>
+            <br/>Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" size="1" onChange="toDo();"> jours
+            <br/>Pourcentage pour le 4eme critère <input type="number" id="pccriteres" name="pccriteres" min="5"
+                                                         max="100" step="5" size="1" value="30" onChange="">
+            <br/>Nb critères à prendre en compte <input type="number" id="nbcriteres" name="nbcriteres" min="1" max="4"
+                                                        size="1" value="3" onChange="">
+        </td>
+    </tr>
+</table>
+<!--<div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img src="loading.gif"/></div>-->
+<div id="statresult" style="visibility:visible"/>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1.29 15/11/2020</div>
+</body>
+</html>
