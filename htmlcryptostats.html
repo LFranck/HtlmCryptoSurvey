@@ -1,6 +1,7 @@
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Cours en temps réel (Prototype)</title>
+    <title>Found best parameters (Prototype)</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <style type="text/css">
         .myOtherTable {
@@ -152,7 +153,7 @@
             var message = "";
             // Nombre de critères
             for (var nbcriteres = 1; nbcriteres < 5; nbcriteres++) {
-                message += "<br /><table class='myOtherTable'>";
+                message += "<br /><table class='myOtherTable' width='10%'>";
                 message += "<caption>Multiplication avec " + nbcriteres + " / 4 critères vérifiés (nombre d'opération).</caption>";
                 message += "<tr><th>Limite\\Moy</th>";
                 for (var nbjours = 2; nbjours < nbJoursMax + 1; nbjours++) {
@@ -222,55 +223,58 @@
     </script>
 </head>
 <body>
-<table width="100%">
+<table width="50%">
     <tr>
         <th align="left">Choix statistiques</th>
-        <th align="left">Paramètres</th>
     </tr>
     <tr>
-        <td>
-            Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange="toDo();"/><br/>
-            Date de Départ <input type="date" id="tripstart" name="tripstart" value="2010-01-01" min="2010-01-01"
-                                  max="2021-12-31" onchange="toDo();">
-            <select id="sbitcoin" size="5" onChange="toDo();">
-                <option value="ADA">ADA</option>
-                <option value="AAVE">AAVE</option>
-                <option value="ALGO">ALGO</option>
-                <option value="BAT">BAT</option>
-                <option value="BCH">Bitcoin Cash</option>
-                <option value="BNB">BNB</option>
-                <option value="BTC" selected>Bitcoin</option>
-                <option value="DASH">Dash</option>
-                <option value="DOT">DOT</option>
-                <option value="ETC">ETC</option>
-                <option value="ETH">Ethereum</option>
-                <option value="EOS">EOS</option>
-                <option value="ICX">ICX</option>
-                <option value="LEND">LEND</option>
-                <option value="LINK">Chain Link</option>
-                <option value="LTC">LTC</option>
-                <option value="QNT">QNT</option>
-                <option value="RLC">RLC</option>
-                <option value="SXP">SXP</option>
-                <option value="TRB">TRB</option>
-                <option value="TRX">TRX</option>
-                <option value="USDC">USDC</option>
-                <option value="USDT">Tehter USD</option>
-                <option value="XLM">Lumen</option>
-                <option value="XMR">Monero</option>
-                <option value="XRP">Ripple</option>
-                <option value="XTZ">XTZ</option>
-            </select>
-            <select id="scurrency" onChange="toDo();" size="5">
-                <option value="USD">USD</option>
-                <option value="EUR" selected>EUR</option>
-            </select>
-        </td>
+        <td>Exchange</td>
+        <td>Crypto</td>
+        <td>Currency</td>
+        <td>Date de Départ</td>
+    </tr>
+    <tr>
+        <td><input name="exchange" id="exchange" value="kraken" size="3" onchange="toDo();"/></td>
+        <td><select id="sbitcoin" size="5" onChange="toDo();">
+            <option value="ADA">ADA</option>
+            <option value="AAVE">AAVE</option>
+            <option value="ALGO">ALGO</option>
+            <option value="BAT">BAT</option>
+            <option value="BCH">Bitcoin Cash</option>
+            <option value="BNB">BNB</option>
+            <option value="BTC" selected>Bitcoin</option>
+            <option value="DASH">Dash</option>
+            <option value="DOT">DOT</option>
+            <option value="ETC">ETC</option>
+            <option value="ETH">Ethereum</option>
+            <option value="EOS">EOS</option>
+            <option value="ICX">ICX</option>
+            <option value="LEND">LEND</option>
+            <option value="LINK">Chain Link</option>
+            <option value="LTC">LTC</option>
+            <option value="QNT">QNT</option>
+            <option value="RLC">RLC</option>
+            <option value="SXP">SXP</option>
+            <option value="TRB">TRB</option>
+            <option value="TRX">TRX</option>
+            <option value="USDC">USDC</option>
+            <option value="USDT">Tehter USD</option>
+            <option value="XLM">Lumen</option>
+            <option value="XMR">Monero</option>
+            <option value="XRP">Ripple</option>
+            <option value="XTZ">XTZ</option>
+        </select></td>
+        <td><select id="scurrency" onChange="toDo();" size="5">
+            <option value="USD">USD</option>
+            <option value="EUR" selected>EUR</option>
+        </select></td>
+        <td><input type="date" id="tripstart" name="tripstart" value="2010-01-01" min="2010-01-01"
+                                  max="2021-12-31" onchange="toDo();"></td>
     </tr>
 </table>
 <div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img
         src="loading.gif"/></div>
-<div id="statresult" style="visibility: hidden" />
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.17 15/11/2020</div>
+<div id="statresult" style="visibility: hidden"></div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.19 17/11/2020</div>
 </body>
 </html>

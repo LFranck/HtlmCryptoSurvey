@@ -1,6 +1,7 @@
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Cours en temps réel (Prototype)</title>
+    <title>Resumés des actions (Prototype)</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <style type="text/css">
         div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
@@ -54,24 +55,34 @@
     <script type="text/javascript">
         // Liste of coin
         let coinslist = ["ADA", "AAVE", "ALGO", "BAT", "BCH", "BNB", "BTC", "DASH", "DOT", "ETC", "ETH", "EOS", "ICX", "LEND", "LINK", "LTC", "QNT", "RLC", "SXP", "TRB", "TRX", "USDC", "USDT", "XLM", "XMR", "XRP", "XTZ"];
+        // Gestion interval
+        var refreshUrlDay;
+
+        function printSpace(a, b, size) {
+            let interval = "";
+            while ((a + interval + b).length < size - 1) interval = interval + "_";
+            return a + interval + b;
+        }
 
         /**
          **/
         function printFrame(element) {
             //console.log("printFrame -> "+element);
-            document.getElementById("statresult").innerHTML += printDiv(element, "Waiting");
+            document.getElementById("statresult").innerHTML += printDiv(element);
             document.getElementById("statresult").style.visibility = "visible";
         }
 
         /**
          **/
-        function printDiv(element, texte) {
-            let result = "<div id='bitcoin'><div id='label'>" + element + "</div><div id='ele_" + element + "'>" + texte + "</div></div>";
+        function printDiv(element) {
+            let result = "<div id='bitcoin'>" +
+                "<div id='label_" + element + "'></div>" +
+                "<div id='prices_" + element + "'></div>" +
+                "<div id='buy_" + element + "'></div>" +
+                "<div id='sell_" + element + "'></div>" +
+                "</div>";
             return result;
         }
-
-        // Gestion interval
-        var refreshUrlDay;
 
         /**
          *
@@ -97,7 +108,29 @@
                     /* Le service a bien répondu */
                     try {
                         let json = JSON.parse(this.response);
-                        document.getElementById(element).innerHTML = doTheMath(json.Data);
+                        console.log(json.Data[json.Data.length - 1]);
+                        let response = doTheMath(json.Data);
+                        //console.log(response);
+                        let open = json.Data[json.Data.length - 1].open;
+                        let close = json.Data[json.Data.length - 1].close;
+                        let sign = " ➔ ";
+                        document.getElementById("prices_" + element).style.backgroundColor = "#3ebcd6";
+                        if (open < close) {
+                            sign = " ↗ ";
+                            document.getElementById("prices_" + element).style.backgroundColor = "#2c8025";
+                        }
+                        if (open > close) {
+                            sign = " ↘ ";
+                            document.getElementById("prices_" + element).style.backgroundColor = "#a53333";
+                        }
+                        document.getElementById("label_" + element).innerHTML = element;
+                        document.getElementById("prices_" + element).innerHTML = open + sign + close;
+                        document.getElementById("buy_" + element).innerHTML = response.achat;
+                        document.getElementById("sell_" + element).innerHTML = response.vente;
+                        document.getElementById("buy_" + element).style.backgroundColor = "#dd900a";
+                        document.getElementById("sell_" + element).style.backgroundColor = "#dd900a";
+                        if ("" != response.achat) document.getElementById("buy_" + element).style.backgroundColor = "#02ff42";
+                        if ("" != response.vente) document.getElementById("sell_" + element).style.backgroundColor = "#05c3f3";
                     } catch (err) {
                         //document.getElementById("statresult").style.visibility = "hidden";
                         console.log("err -> " + err);
@@ -120,13 +153,9 @@
             ajax.send();
         }
 
-        /**
-         *
-         * @returns {undefined}
-         */
         function doTheMath(localDays) {
             //console.log("doTheMath length = " + localDays.length);
-            if (0 == localDays.length) return;
+            if (0 == localDays.length) return {'achat': "", 'vente': ""};
             let moyHigh = [];
             let moyLow = [];
             // Initialisation
@@ -134,7 +163,6 @@
                 moyHigh[i] = 0;
                 moyLow[i] = 0;
             }
-            let a1 = "", a2 = "";
             let nbjr = document.getElementById("snbjr").value;
             let limitPourcent = document.getElementById("pccriteres").value;
             let nbCritere = document.getElementById("nbcriteres").value;
@@ -153,44 +181,36 @@
                     moyLow[l - 1] = cumulLow / nbjr;
                 }
             }
-            let start = localDays.length - nbjr * 2;
-            if (start < 0) start = 0;
-            for (let i = start; i < localDays.length; i++) {
-                a1 = "";
-                a2 = "";
-                if (i < localDays.length - 1) {
-                    // Calcul des critères pour l'achat
-                    var resultachat = {text: "achat ", compteur: 0};
-                    var limiteachat = (limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-                    if ((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
-                        traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
-                        traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
-                        traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
-                        traitePlus(localDays[i + 1].close < limiteachat, resultachat);
-                        if (resultachat.compteur >= nbCritere) {
-                            lastAchat = localDays[i].close;
-                            a1 = resultachat.text;
-                            // if (i == localDays.length - 1) notifyMe("Achat interressant !!!");
-                        }
-                    }
-                    // Calcul des critères pour la vente
-                    var resultvente = {text: "vente ", compteur: 0};
-                    var limitevente = (1 - limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-                    if ((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
-                        traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
-                        traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
-                        traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
-                        traitePlus(localDays[i + 1].close > limitevente, resultvente);
-                        if (resultvente.compteur >= nbCritere) {
-                            lastVente = localDays[i].close;
-                            a2 = resultvente.text;
-                            //if (i == localDays.length - 1) notifyMe("Vente interressante !!!");
-                        }
-                    }
+            let a1 = "", a2 = "";
+            let i = localDays.length - 2;
+            let resultachat = {text: "achat ", compteur: 0};
+            let limiteachat = (limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
+            if ((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
+                traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
+                traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
+                traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
+                traitePlus(localDays[i + 1].close < limiteachat, resultachat);
+                if (resultachat.compteur >= nbCritere) {
+                    lastAchat = localDays[i].close;
+                    a1 = resultachat.text;
+                    // if (i == localDays.length - 1) notifyMe("Achat interressant !!!");
                 }
             }
-            return a1 + "<br />" + a2;
-
+            // Calcul des critères pour la vente
+            var resultvente = {text: "vente ", compteur: 0};
+            var limitevente = (1 - limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
+            if ((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
+                traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
+                traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
+                traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
+                traitePlus(localDays[i + 1].close > limitevente, resultvente);
+                if (resultvente.compteur >= nbCritere) {
+                    lastVente = localDays[i].close;
+                    a2 = resultvente.text;
+                    //if (i == localDays.length - 1) notifyMe("Vente interressante !!!");
+                }
+            }
+            return {'achat': a1, 'vente': a2};
         }
 
         /**
@@ -232,16 +252,18 @@
             let test = 0;
             refreshUrlDay = setInterval(function () {
                 //console.log("refreshUrlDay -> "+currentIdx);
-                if (currentIdx >= coinslist.length) currentIdx = 0;
+                if (currentIdx >= coinslist.length) {
+                    currentIdx = 0;
+                }
                 let urlDay = constructUrl("histoday", coinslist[currentIdx], currency, exchange, "allData=true");
-                getJsonToElement(urlDay, "ele_" + coinslist[currentIdx]);
+                getJsonToElement(urlDay, coinslist[currentIdx]);
                 // Next
                 currentIdx++;
-            }, 5000);
+            }, 3000);
         }
 
         window.onload = function () {
-            console.log("onload");
+            //console.log("onload");
             coinslist.forEach(element => printFrame(element));
             toDo();
         }
@@ -256,12 +278,12 @@
     <tr>
         <td>
             Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange=""/><br/>
-            <input type="radio" name="scurrency" value="USD">USD</radio>
-            <input type="radio" name="scurrency" value="EUR" checked>EUR</radio>
-            </radiogroup>
+            <input type="radio" name="scurrency" value="USD"><label for="USD">USD</label>
+            <input type="radio" name="scurrency" value="EUR" checked><label for="USD">EUR</label>
         </td>
         <td>
-            <br/>Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" size="1" onChange="toDo();"> jours
+            <br/>Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" size="1" onChange="toDo();">
+            jours
             <br/>Pourcentage pour le 4eme critère <input type="number" id="pccriteres" name="pccriteres" min="5"
                                                          max="100" step="5" size="1" value="30" onChange="">
             <br/>Nb critères à prendre en compte <input type="number" id="nbcriteres" name="nbcriteres" min="1" max="4"
@@ -270,7 +292,7 @@
     </tr>
 </table>
 <!--<div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img src="loading.gif"/></div>-->
-<div id="statresult" style="visibility:visible"/>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1.29 15/11/2020</div>
+<div id="statresult"></div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1.37 17/11/2020</div>
 </body>
 </html>
