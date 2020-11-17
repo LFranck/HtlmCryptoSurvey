@@ -225,7 +225,7 @@
 <body>
 <table width="50%">
     <tr>
-        <th align="left">Choix statistiques</th>
+        <th align="left" colspan="4">Choix statistiques</th>
     </tr>
     <tr>
         <td>Exchange</td>
@@ -234,7 +234,12 @@
         <td>Date de Départ</td>
     </tr>
     <tr>
-        <td><input name="exchange" id="exchange" value="kraken" size="3" onchange="toDo();"/></td>
+        <td><select name="exchange" id="exchange" size="5" onChange="toDo();">
+            <option value="Bitfinex">Bitfinex</option>
+            <option value="Coinbase">Coinbase</option>
+            <option value="HitBTC">HitBTC</option>
+            <option value="Kraken" selected>Kraken</option>
+        </select></td>
         <td><select id="sbitcoin" size="5" onChange="toDo();">
             <option value="ADA">ADA</option>
             <option value="AAVE">AAVE</option>
@@ -275,6 +280,6 @@
 <div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img
         src="loading.gif"/></div>
 <div id="statresult" style="visibility: hidden"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.19 17/11/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.20 17/11/2020</div>
 </body>
 </html>

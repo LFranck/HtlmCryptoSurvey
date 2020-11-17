@@ -456,7 +456,7 @@
 
             // Le cours chaque minutes
             urlPrice = constructUrl("histominute", coin, currency, exchange, "limit=10");
-            //console.log("urlPrice = " + urlPrice);
+            console.log("urlPrice = " + urlPrice);
             getJson(urlPrice, jsonCours);
             refreshUrlPrice = setInterval(function () {
                 getJson(urlPrice, jsonCours);
@@ -464,7 +464,7 @@
 
             // Le cours des derniers jours
             urlHour = constructUrl("histohour", coin, currency, exchange, "limit=24")
-            //console.log("urlHour = " + urlHour);
+            console.log("urlHour = " + urlHour);
             getJson(urlHour, jsonHours);
             refreshUrlHour = setInterval(function () {
                 getJson(urlHour, jsonHours);
@@ -472,7 +472,7 @@
 
             // Le cours des derniers jours
             urlDay = constructUrl("histoday", coin, currency, exchange, "allData=true");
-            //console.log("urlDay = " + urlDay);
+            console.log("urlDay = " + urlDay);
             getJson(urlDay, jsonDays);
             refreshUrlDay = setInterval(function () {
                 getJson(urlDay, jsonDays);
@@ -492,51 +492,57 @@
     </script>
 </head>
 <body>
-<table width="100%">
+<table>
     <tr>
-        <th align="left">Choix statistiques</th>
-        <th align="left">Paramètres</th>
+        <th align="left" colspan="4">Choix statistiques</th>
     </tr>
     <tr>
-        <td>
-            Exchange <input name="exchange" id="exchange" value="kraken" size="3" onchange="todo();"/><br/>
-            <select id="scoin" size="5" onChange="coin = this.value; toDo();">
-                <option value="ADA">ADA</option>
-                <option value="AAVE">AAVE</option>
-                <option value="ALGO">ALGO</option>
-                <option value="BAT">BAT</option>
-                <option value="BCH">Bitcoin Cash</option>
-                <option value="BNB">BNB</option>
-                <option value="BTC" selected>Bitcoin</option>
-                <option value="DASH">Dash</option>
-                <option value="DOT">DOT</option>
-                <option value="ETC">ETC</option>
-                <option value="ETH">Ethereum</option>
-                <option value="EOS">EOS</option>
-                <option value="ICX">ICX</option>
-                <option value="LEND">LEND</option>
-                <option value="LINK">Chain Link</option>
-                <option value="LTC">LTC</option>
-                <option value="QNT">QNT</option>
-                <option value="RLC">RLC</option>
-                <option value="SXP">SXP</option>
-                <option value="TRB">TRB</option>
-                <option value="TRX">TRX</option>
-                <option value="USDC">USDC</option>
-                <option value="USDT">Tehter USD</option>
-                <option value="XLM">Lumen</option>
-                <option value="XMR">Monero</option>
-                <option value="XRP">Ripple</option>
-                <option value="XTZ">XTZ</option>
-            </select>
-            <select id="scurrency" onChange="currency = this.value;
-                            toDo();" size="5">
-                <option value="USD">USD</option>
-                <option value="EUR" selected>EUR</option>
-            </select>
-        </td>
-        <td>
-            <br/>Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" size="1" onChange="nbjr = parseInt(this.value);
+        <td>Exchange</td>
+        <td>Crypto</td>
+        <td>Currency</td>
+        <td>Critères</td>
+    </tr>
+    <tr>
+        <td><select name="exchange" id="exchange" size="5" onChange="toDo();">
+            <option value="Bitfinex">Bitfinex</option>
+            <option value="Coinbase">Coinbase</option>
+            <option value="HitBTC">HitBTC</option>
+            <option value="Kraken" selected>Kraken</option>
+        </select>
+        <td><select name="scoin" id="scoin" size="5" onChange="toDo();">
+            <option value="ADA">ADA</option>
+            <option value="AAVE">AAVE</option>
+            <option value="ALGO">ALGO</option>
+            <option value="BAT">BAT</option>
+            <option value="BCH">Bitcoin Cash</option>
+            <option value="BNB">BNB</option>
+            <option value="BTC" selected>Bitcoin</option>
+            <option value="DASH">Dash</option>
+            <option value="DOT">DOT</option>
+            <option value="ETC">ETC</option>
+            <option value="ETH">Ethereum</option>
+            <option value="EOS">EOS</option>
+            <option value="ICX">ICX</option>
+            <option value="LEND">LEND</option>
+            <option value="LINK">Chain Link</option>
+            <option value="LTC">LTC</option>
+            <option value="QNT">QNT</option>
+            <option value="RLC">RLC</option>
+            <option value="SXP">SXP</option>
+            <option value="TRB">TRB</option>
+            <option value="TRX">TRX</option>
+            <option value="USDC">USDC</option>
+            <option value="USDT">Tehter USD</option>
+            <option value="XLM">Lumen</option>
+            <option value="XMR">Monero</option>
+            <option value="XRP">Ripple</option>
+            <option value="XTZ">XTZ</option>
+        </select></td>
+        <td><select name="scurrency" id="scurrency" onChange="toDo();" size="5">
+            <option value="USD">USD</option>
+            <option value="EUR" selected>EUR</option>
+        </select></td>
+        <td>Moyenne sur <input type="number" min="2" max="20" id="snbjr" value="4" size="1" onChange="nbjr = parseInt(this.value);
                             getDays();
                             affichageCourbes();"> jours
             <br/>Pourcentage pour le 4eme critère <input type="number" id="pccriteres" name="pccriteres" min="5"
@@ -595,6 +601,6 @@
                                          size="1"> jours
     <div id="info"></div>
 </div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.14 17/11/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.11.15 17/11/2020</div>
 </body>
 </html>
