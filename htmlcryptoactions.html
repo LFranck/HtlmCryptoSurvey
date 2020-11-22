@@ -4,7 +4,7 @@
     <title>Resumés des actions (Prototype)</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <style type="text/css">
-        div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
+        div.bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
             font-size: 25px;
             line-height: 30px;
             min-height: 60px;
@@ -75,7 +75,7 @@
         /**
          **/
         function printDiv(element) {
-            let result = "<div id='bitcoin'>" +
+            let result = "<div id='grp_"+element+"' class='bitcoin'>" +
                 "<div id='label_" + element + "'></div>" +
                 "<div id='prices_" + element + "'></div>" +
                 "<div id='buy_" + element + "'></div>" +
@@ -90,7 +90,7 @@
          * @param {type} element
          * @returns {undefined}
          */
-        function getJsonToElement(url, element) {
+        function getJsonToElement(url, element, exchange) {
             //console.log("getJson element -> " + element + " url -> " + url);
             /* Appel AJAX vers cryptocompare.com */
             var ajax = new XMLHttpRequest();
@@ -122,7 +122,7 @@
                             sign = " ↘ ";
                             document.getElementById("prices_" + element).style.backgroundColor = "#a53333";
                         }
-                        document.getElementById("label_" + element).innerHTML = element;
+                        document.getElementById("label_" + element).innerHTML = element +" ("+exchange+")";
                         document.getElementById("prices_" + element).innerHTML = open + sign + close;
                         document.getElementById("buy_" + element).innerHTML = response.achat;
                         document.getElementById("sell_" + element).innerHTML = response.vente;
@@ -255,7 +255,7 @@
                     currentIdx = 0;
                 }
                 let urlDay = constructUrl("histoday", coinslist[currentIdx], currency, exchange, "allData=true");
-                getJsonToElement(urlDay, coinslist[currentIdx]);
+                getJsonToElement(urlDay, coinslist[currentIdx], exchange);
                 // Next
                 currentIdx++;
             }, 3000);
@@ -301,6 +301,6 @@
 </table>
 <!--<div id="bg_mask" style="background-position:50px 50px; height:0px; width:0px; visibility:visible"><img src="loading.gif"/></div>-->
 <div id="statresult"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1.39 18/11/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1.40 21/11/2020</div>
 </body>
 </html>

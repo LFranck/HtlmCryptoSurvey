@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script type="text/javascript">
+    /**
+     *
+     */
+    function getCryptos(exchange) {
+        document.getElementById("selects").innerHTML = "";
+        document.getElementById("message").innerHTML = "Loading cryptos from "+exchange+" !";
+        let url = "https://min-api.cryptocompare.com/data/all/coinlist?summary=1";
+        url += "&rand=" + Math.round(100000 * Math.random());
+        /* Appel AJAX vers cryptocompare.com */
+        var ajax = new XMLHttpRequest();
+        /* Détection de l'avancement de l'appel */
+        ajax.onreadystatechange = function () {
+            //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
+        }
+        /* Détection de la fin de l'appel */
+        ajax.onload = function () {
+            if (this.status == 200) {
+                /* Le service a bien répondu */
+                try {
+                    let json = JSON.parse(this.response);
+                    let arrCoins = json.Data;
+                    // Creation radiobox
+                    document.getElementById("message").innerHTML = "Select the cryptos you want...";
+                    i=0;
+                    Object.keys(arrCoins).forEach(key => {
+                        i++;
+                        if(i>200) return false;
+                       document.getElementById("selects").innerHTML += createCoinsElement(arrCoins[key].FullName, arrCoins[key].ImageUrl)+"&nbsp;";
+                    })
+                } catch (err) {
+                    document.getElementById("message").innerHTML = "Erreur sur le chargement des cryptos";
+                    console.log("getCryptos : Retour JSON incorrect ->" + err);
+                    return false;
+                }
+            }
+        }
+        /* Détection du timeout */
+        ajax.ontimeout = function () {
+            document.getElementById("message").innerHTML = "Le service n'a pas répondu à temps : nouvel essai dans 5 sec";
+            console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+            /* Relancer l'appel 5 secondes plus tard */
+            setTimeout(function () {
+                getJson(url, ret);
+            }, 5000);
+        }
+        /* Préparation de la requête et envoi */
+        ajax.open("GET", url, true);
+        ajax.timeout = 1000;
+        /* Délai d'expiration à 1 seconde */
+        ajax.send();
+    }
+
+    /**
+     *
+     */
+    function getExchange() {
+        let url = "https://min-api.cryptocompare.com/data/exchanges/general";
+        url += "?rand=" + Math.round(100000 * Math.random());
+        console.log(url);
+        /* Appel AJAX vers cryptocompare.com */
+        var ajax = new XMLHttpRequest();
+        /* Détection de l'avancement de l'appel */
+        ajax.onreadystatechange = function () {
+            //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
+        }
+        /* Détection de la fin de l'appel */
+        ajax.onload = function () {
+            if (this.status == 200) {
+                /* Le service a bien répondu */
+                try {
+                    let json = JSON.parse(this.response);
+                    let arrExchange = json.Data;
+                    // Creation radiobox
+                    document.getElementById("radios").innerHTML = "";
+                    document.getElementById("message").innerHTML = "Chose an exchange to see the crypto available";
+                    Object.keys(arrExchange).forEach(key => {
+                        document.getElementById("radios").innerHTML += createImageElement(arrExchange[key].InternalName, arrExchange[key].LogoUrl)+"&nbsp;";
+                    })
+                } catch (err) {
+                    document.getElementById("message").innerHTML = "Erreur sur le chargement des exchanges";
+                    console.log("getExchange : Retour JSON incorrect ->" + err);
+                    return false;
+                }
+            }
+        }
+        /* Détection du timeout */
+        ajax.ontimeout = function () {
+            document.getElementById("message").innerHTML = "Le service n'a pas répondu à temps : nouvel essai dans 5 sec";
+            console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+            /* Relancer l'appel 5 secondes plus tard */
+            setTimeout(function () {
+                getJson(url, ret);
+            }, 5000);
+        }
+        /* Préparation de la requête et envoi */
+        ajax.open("GET", url, true);
+        ajax.timeout = 1000;
+        /* Délai d'expiration à 1 seconde */
+        ajax.send();
+    }
+
+    function createCoinsElement(name, img) {
+        var img = '<img src="https://www.cryptocompare.com'+img+'"' +
+            ' width="30"' +
+            ' length="30"' +
+            ' alt="'+name+"'"+
+            ' title="'+name+"'"+
+            ' onclick="alert(\''+name+'\')"'+
+            '/>'
+        return img;
+    }
+
+    function createImageElement(name, img) {
+        var img = '<img src="https://www.cryptocompare.com'+img+'"' +
+            ' width="30"' +
+            ' length="30"' +
+            ' alt="'+name+"'"+
+            ' title="'+name+"'"+
+            ' onclick="getCryptos(\''+name+'\')"'+
+            '/>'
+        return img;
+    }
+
+    window.onload = function () {
+        document.getElementById("message").innerHTML = "Load ...";
+        getExchange();
+    }
+
+
+</script>
+<body>
+<div id="message"><p>Zone message</p></div><br /><br/>
+<div id="radios"><p>Zone radios</p></div><br /><br/>
+<div id="selects"><p>Zone selects</p></div>
+<div id="container"></div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1.1 21/11/2020</div>
+</body>
+</html>

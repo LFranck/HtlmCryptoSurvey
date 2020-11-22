@@ -1,5 +1,5 @@
 /**
- * version 2 15/11/2020
+ * version 3 21/11/2020
  * @param {type} func
  * @param {type} param
  * @returns {String}
@@ -117,6 +117,7 @@ function hourConverter(UNIX_timestamp) {
     return hour + ':' + min + ':' + sec;
 }
 
+
 /**
  * 
  * @param {type} url
@@ -140,8 +141,8 @@ function getJson(url, ret) {
         if (this.status == 200) {
             /* Le service a bien répondu */
             try {
-                var json = JSON.parse(this.response);
-                var datas = json.Data;
+                let json = JSON.parse(this.response);
+                let datas = json.Data;
                 if (json.Data.Data)
                     datas = json.Data.Data;
                 if (datas.length) {
