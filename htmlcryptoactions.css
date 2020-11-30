@@ -1,0 +1,38 @@
+div.bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
+    font-size: 25px;
+    line-height: 30px;
+    min-height: 60px;
+    font-weight: bold;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+    margin: 5px auto 5px 5px;
+    padding: 0 5px 5px;
+    display: inline-block;
+}
+
+div#bitcoin, div#lowcadre, div#highcadre, div#lowcadreavg, div#highcadreavg {
+    margin-left: auto;
+}
+
+div#horo {
+    right: 5px;
+    bottom: -21px;
+    font-size: 12px;
+}
+
+div#source {
+    font-size: 12px;
+    color: #999;
+    position: fixed;
+    bottom: 5px;
+    right: 5px;
+}
+
+div#info {
+    background-color: #eee;
+    min-height: 10px;
+    padding: 5px;
+    margin: 10px;
+    font-size: 15px;
+}

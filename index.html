@@ -3,15 +3,38 @@
 <head>
     <title>Cours en temps réel (Prototype)</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
 </head>
 <body>
-<h1>Hello</h1>
-<!--<p><a href="htmlReadExchange.html">Ici</a> la page de test de chargement des crypto par exchange.</p>-->
+<h1>Aide à la décision pour la gestin des cryptmonnaies.</h1>
+<a href="htmlReadExchange.html">Ici</a> la page de test de chargement des crypto par exchange.</p>
 <p><a href="htmlcryptoactions.html">Ici</a> la page pour voir rapidement les actions à prendre.</p>
 <p><a href="htmlcryptostats.html">Ici</a> la page pour regarder les statistiques d'une monnaie en fonction des quatres
     critères.</p>
 <p><a href="htmlcryptosurvey.html">Ici</a> la page pour voir en temps votre monnaie, et recevoir les alertes selon les
     quatres critères.</p>
-<div id="source">2020©LFRANCK - Version 0.2.0 21/11/2020</div>
+<h2>Documentation</h2>
+<p>Ceci est un projet personnel prototypes d'une future application mobile. Donc soyez indulgent.<br/>Si vous avez des idées d'amélioration ou si vous trouvez des erreurs, il est possible de créer des <a href="https://github.com/LFranck/HtlmCryptoSurvey/issues/new">tickets sur githhub</a>.</p>
+<h2>Principes mis en place</h2>
+<p>Le premier principe est le croissement de la courbe avec une moyenne mobile :
+<ul>
+    <li>Si la courbe remonte en croisant la moyenne qui descent, c'est intérressant pour l'achat.</li>
+    <li>Si la courbe descend en croisant la moyenne qui monte, c'est intérressant pour la vente.</li>
+</ul>
+</p>
+<h2>Les critères pour aider au choix</h2>
+<p>Le croisement n'est pas le seul élément pris en compte. Ainsi nous definissons les quatres critères (les + et - dans les pages suivantes).<br />
+Ces critères sont appliqués sur les valeurs basses et hautes du cours de la monnaie observée. Ainsi pour savoir si il faut acheter, c'est la moyenne des valeurs basses est analysée, et pour la vente, la moyennes des velaurs hautes.
+    <img src="4critères.PNG"/>
+<ul>
+    <li>Si la courbe (bleue) remonte en croisant la moyenne (orange) qui descend, c'est intérressant pour l'achat.</li>
+    <li>Si la courbe (rouge) descend en croisant la moyenne (verte) qui monte, c'est intérressant pour la vente.</li>
+</ul>
+</p>
+
+<div id="source">2020©LFRANCK - Version 0.3.0 30/11/2020</div>
 </body>
 </html>

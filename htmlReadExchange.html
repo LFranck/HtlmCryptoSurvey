@@ -1,145 +1,345 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>GESTION DE VOS CRYPTOS FAVORIES</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="htmlReadExchange.css" type="text/css" media="screen"/>
+    <script type="text/javascript" src="fonctions.js"></script>
+    <script type="text/javascript">
+        // Variables globales
+        let echSelected;
+        let coiSelected;
+        let arrCoins;
+        let arrExchange;
+
+        // Get the modal
+        let modal = document.getElementById("myModal");
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        /**
+         * Récupération des données de cours du Bitcoin en temps réel
+         * @returns {undefined}
+         */
+        function getValues(exchange, coin) {
+            let url = "https://min-api.cryptocompare.com/data/price?tsyms=USD,EUR";
+            url += "&fsym=" + coin;
+            url += "&e=" + exchange;
+            url += "&rand=" + Math.round(100000 * Math.random());
+            url += "&api_key=" + apikey;
+            console.log("getValues url=" + url);
+            /* Appel AJAX vers cryptocompare.com */
+            var ajax = new XMLHttpRequest();
+            console.log("getCours : readyState après new : " + ajax.readyState);
+            /* Détection de l'avancement de l'appel */
+            ajax.onreadystatechange = function () {
+                //console.log("getValues : readyState a changé et vaut : " + ajax.readyState)
+            }
+            /* Détection de la fin de l'appel */
+            ajax.onload = function () {
+                //console.log("getValues : Appel AJAX terminé");
+                //console.log("  status : " + this.status);
+                //console.log("  response : " + this.response);
+                if (this.status == 200) {
+                    /* Le service a bien répondu */
+                    try {
+                        let jsonCours = JSON.parse(this.response);
+                        console.log(jsonCours);
+                        if (jsonCours.Response == "Error")
+                            document.getElementById("modalcontent").insertAdjacentHTML('beforeend', jsonCours.Message);
+                        else {
+                            Object.keys(jsonCours).forEach(key => {
+                                //console.log(key + " -> " + jsonCours[key]);
+                                document.getElementById("modalcontent").insertAdjacentHTML('beforeend', key + " -> " + jsonCours[key]+"<br />");
+                            })
+                        }
+                    } catch (err) {
+                        console.log("getValues : Retour JSON incorrect");
+                        return false;
+                    }
+                } else {
+                    document.getElementById("modalcontent").insertAdjacentHTML('beforeend', "NON TROUVE");
+                }
+            }
+            /* Détection du timeout */
+            ajax.ontimeout = function () {
+                console.log("getValues : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                /* Relancer l'appel 5 secondes plus tard */
+                setTimeout(function (exchange, coin) {
+                    getCryptos(exchange, coin);
+                }, 5000);
+            }
+            /* Préparation de la requête et envoi */
+            ajax.open("GET", url, true);
+            ajax.timeout = 1000;
+            /* Délai d'expiration à 1 seconde */
+            ajax.send();
+        }
+
+        function onClickCoins(letter) {
+            // Creation radiobox
+            document.getElementById("selects").innerHTML = "";
+            document.getElementById("message").innerHTML = "Select the cryptos you want...";
+            Object.keys(arrCoins).forEach(key => {
+                //console.log(arrCoins[key].FullName[0] + " -> " + arrCoins[key].FullName);
+                let word = arrCoins[key].FullName;
+                let url = arrCoins[key].ImageUrl;
+                if (testLetter(word, letter)) {
+                    let out = createImageElement(word, url, 1);
+                    document.getElementById("selects").insertAdjacentHTML('beforeend', out + "");
+                }
+            })
+        }
+
+        function onClickEchange(letter) {
+            // Creation radiobox
+            document.getElementById("radios").innerHTML = "";
+            document.getElementById("message").innerHTML = "Chose an exchange";
+            Object.keys(arrExchange).forEach(key => {
+                //console.log(arrExchange[key].InternalName[0] + " -> " + arrExchange[key].InternalName);
+                let word = arrExchange[key].InternalName;
+                let url = arrExchange[key].LogoUrl;
+                if (testLetter(word, letter)) {
+                    let out = createImageElement(word, url, 0);
+                    document.getElementById("radios").insertAdjacentHTML('beforeend', out + '&nbsp;');
+                }
+            })
+        }
+
+        /**
+         *
+         */
+        function getCryptos(letter) {
+            //clear values
+            coiSelected = null;
+
+            document.getElementById("selects").innerHTML = "";
+            document.getElementById("message").innerHTML = "Loading cryptos";
+            let url = "https://min-api.cryptocompare.com/data/all/coinlist?summary=1";
+            url += "&rand=" + Math.round(100000 * Math.random());
+            url += "&api_key=" + apikey;
+            /* Appel AJAX vers cryptocompare.com */
+            var ajax = new XMLHttpRequest();
+            /* Détection de l'avancement de l'appel */
+            ajax.onreadystatechange = function () {
+                //console.log("getCryptos : readyState a changé et vaut : " + ajax.readyState)
+            }
+            /* Détection de la fin de l'appel */
+            ajax.onload = function () {
+                if (this.status == 200) {
+                    /* Le service a bien répondu */
+                    try {
+                        printAlphabets("alph_coin", "onClickCoins");
+                        let json = JSON.parse(this.response);
+                        arrCoins = json.Data;
+                        onClickCoins("A");
+                    } catch (err) {
+                        document.getElementById("message").innerHTML = "Erreur sur le chargement des cryptos";
+                        console.log("getCryptos : Retour JSON incorrect ->" + err);
+                        return false;
+                    }
+                }
+            }
+            /* Détection du timeout */
+            ajax.ontimeout = function () {
+                document.getElementById("message").innerHTML = "Le service n'a pas répondu à temps : nouvel essai dans 5 sec";
+                console.log("getCryptos : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                /* Relancer l'appel 5 secondes plus tard */
+                setTimeout(function () {
+                    getCryptos();
+                }, 5000);
+            }
+            /* Préparation de la requête et envoi */
+            ajax.open("GET", url, true);
+            ajax.timeout = 1000;
+            /* Délai d'expiration à 1 seconde */
+            ajax.send();
+        }
+
+        /**
+         *
+         */
+        function getExchange() {
+            //clear values
+            echSelected = null;
+
+            let url = "https://min-api.cryptocompare.com/data/exchanges/general";
+            url += "?rand=" + Math.round(100000 * Math.random());
+            url += "&api_key=" + apikey;
+            console.log("getExchange url = " + url);
+            /* Appel AJAX vers cryptocompare.com */
+            var ajax = new XMLHttpRequest();
+            /* Détection de l'avancement de l'appel */
+            ajax.onreadystatechange = function () {
+                //console.log("getExchange : readyState a changé et vaut : " + ajax.readyState)
+            }
+            /* Détection de la fin de l'appel */
+            ajax.onload = function () {
+                if (this.status == 200) {
+                    /* Le service a bien répondu */
+                    try {
+                        printAlphabets("alph_exch", "onClickEchange");
+                        let json = JSON.parse(this.response);
+                        arrExchange = json.Data;
+                        onClickEchange("A");
+                    } catch (err) {
+                        document.getElementById("message").innerHTML = "Erreur sur le chargement des exchanges";
+                        console.log("getExchange : Retour JSON incorrect ->" + err);
+                        return false;
+                    }
+                }
+            }
+            /* Détection du timeout */
+            ajax.ontimeout = function () {
+                document.getElementById("message").innerHTML = "Le service n'a pas répondu à temps : nouvel essai dans 5 sec";
+                console.log("getExchange : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
+                /* Relancer l'appel 5 secondes plus tard */
+                setTimeout(function () {
+                    getExchange();
+                }, 5000);
+            }
+            /* Préparation de la requête et envoi */
+            ajax.open("GET", url, true);
+            ajax.timeout = 1000;
+            /* Délai d'expiration à 1 seconde */
+            ajax.send();
+        }
+
+        /**
+         *
+         * @param name
+         * @param img
+         * @returns {string}
+         */
+        function createImageElement(name, img, target) {
+            // Nettoyage du nom : recherche code en parenthèse
+            let parenthese = /\((.*?)\)/;
+            let tabParenthese = name.split(parenthese);
+            let short = name;
+            if (tabParenthese.length > 1) {
+                short = tabParenthese[1];
+            }
+            var img = '<img src="https://www.cryptocompare.com' + img + '"' +
+                ' width="30"' +
+                ' length="30"' +
+                ' alt="' + short + "'" +
+                ' title="' + name + "'" +
+                ' onclick="getCryptos(\'' + short + '\')"' +
+                '/>';
+            return ' <span id=' + short + ' class="img_unselected" onclick="changeClass( \'' + short + '\', \'' + target + '\' )">' + img + ' ' + name + '</span> ';
+        }
+
+        /**
+         *
+         * @param name
+         * @param target
+         */
+        function changeClass(name, target) {
+            console.log("changeClass (" + name + ", " + target + ")");
+
+            if (target == 1) {
+                console.log("coiSelected=" + coiSelected);
+                if (coiSelected != null && document.getElementById(coiSelected) != null) document.getElementById(coiSelected).className = 'img_unselected';
+                if (coiSelected != name) coiSelected = name;
+                else {
+                    name = null;
+                    coiSelected = null;
+                }
+            } else {
+                console.log("echSelected=" + echSelected);
+                if (echSelected != null && document.getElementById(echSelected) != null) document.getElementById(echSelected).className = 'img_unselected';
+                if (echSelected != name) echSelected = name;
+                else {
+                    name = null;
+                    echSelected = null;
+                }
+            }
+            if (name != null && document.getElementById(name) != null) document.getElementById(name).className = 'img_selected';
+            if (echSelected && coiSelected) {
+                document.getElementById("modalcontent").innerHTML = "<p>Check " + coiSelected + " in " + echSelected + "</p>";
+                getValues(echSelected, coiSelected);
+                modal.style.display = "block";
+            }
+        }
+
+        /**
+         *
+         * @param target
+         * @param get
+         */
+        function printAlphabets(target, get) {
+            //console.log("printAlphabets -> " + target);
+            //set the default value of i & j to print A to Z
+            let i = 65;
+            let j = 91;
+
+            // Set first
+            document.getElementById(target).innerHTML = "<button onclick=\"" + get + "('#')\">#</button>";
+
+            //loop through the values from i to j
+            for (let k = i; k < j; k++) {
+                //convert the char code to string (Alphabets)
+                let str = String.fromCharCode(k);
+                str = "<button onclick=\"" + get + "('" + str + "')\">" + str + "</button>";
+                //print the result
+                document.getElementById(target).insertAdjacentHTML('beforeend', str + " ");
+            }
+        }
+
+        /**
+         *
+         */
+        window.onload = function () {
+            document.getElementById("message").innerHTML = "Load ...";
+            // Get the modal
+            modal = document.getElementById("myModal");
+            getExchange();
+            getCryptos();
+
+            let incookie =[['kraken','BTC','USD'],['kraken','BTC','EUR']];
+            setCookie("favoris", incookie, 1000);
+            let outcookie=getCookie("favoris");
+            console.log(outcookie);
+        }
+    </script>
 </head>
-<script type="text/javascript">
-    /**
-     *
-     */
-    function getCryptos(exchange) {
-        document.getElementById("selects").innerHTML = "";
-        document.getElementById("message").innerHTML = "Loading cryptos from "+exchange+" !";
-        let url = "https://min-api.cryptocompare.com/data/all/coinlist?summary=1";
-        url += "&rand=" + Math.round(100000 * Math.random());
-        /* Appel AJAX vers cryptocompare.com */
-        var ajax = new XMLHttpRequest();
-        /* Détection de l'avancement de l'appel */
-        ajax.onreadystatechange = function () {
-            //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
-        }
-        /* Détection de la fin de l'appel */
-        ajax.onload = function () {
-            if (this.status == 200) {
-                /* Le service a bien répondu */
-                try {
-                    let json = JSON.parse(this.response);
-                    let arrCoins = json.Data;
-                    // Creation radiobox
-                    document.getElementById("message").innerHTML = "Select the cryptos you want...";
-                    i=0;
-                    Object.keys(arrCoins).forEach(key => {
-                        i++;
-                        if(i>200) return false;
-                       document.getElementById("selects").innerHTML += createCoinsElement(arrCoins[key].FullName, arrCoins[key].ImageUrl)+"&nbsp;";
-                    })
-                } catch (err) {
-                    document.getElementById("message").innerHTML = "Erreur sur le chargement des cryptos";
-                    console.log("getCryptos : Retour JSON incorrect ->" + err);
-                    return false;
-                }
-            }
-        }
-        /* Détection du timeout */
-        ajax.ontimeout = function () {
-            document.getElementById("message").innerHTML = "Le service n'a pas répondu à temps : nouvel essai dans 5 sec";
-            console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
-            /* Relancer l'appel 5 secondes plus tard */
-            setTimeout(function () {
-                getJson(url, ret);
-            }, 5000);
-        }
-        /* Préparation de la requête et envoi */
-        ajax.open("GET", url, true);
-        ajax.timeout = 1000;
-        /* Délai d'expiration à 1 seconde */
-        ajax.send();
-    }
-
-    /**
-     *
-     */
-    function getExchange() {
-        let url = "https://min-api.cryptocompare.com/data/exchanges/general";
-        url += "?rand=" + Math.round(100000 * Math.random());
-        console.log(url);
-        /* Appel AJAX vers cryptocompare.com */
-        var ajax = new XMLHttpRequest();
-        /* Détection de l'avancement de l'appel */
-        ajax.onreadystatechange = function () {
-            //console.log("getJson : readyState a changé et vaut : " + ajax.readyState)
-        }
-        /* Détection de la fin de l'appel */
-        ajax.onload = function () {
-            if (this.status == 200) {
-                /* Le service a bien répondu */
-                try {
-                    let json = JSON.parse(this.response);
-                    let arrExchange = json.Data;
-                    // Creation radiobox
-                    document.getElementById("radios").innerHTML = "";
-                    document.getElementById("message").innerHTML = "Chose an exchange to see the crypto available";
-                    Object.keys(arrExchange).forEach(key => {
-                        document.getElementById("radios").innerHTML += createImageElement(arrExchange[key].InternalName, arrExchange[key].LogoUrl)+"&nbsp;";
-                    })
-                } catch (err) {
-                    document.getElementById("message").innerHTML = "Erreur sur le chargement des exchanges";
-                    console.log("getExchange : Retour JSON incorrect ->" + err);
-                    return false;
-                }
-            }
-        }
-        /* Détection du timeout */
-        ajax.ontimeout = function () {
-            document.getElementById("message").innerHTML = "Le service n'a pas répondu à temps : nouvel essai dans 5 sec";
-            console.log("getJson : Le service n'a pas répondu à temps : nouvel essai dans 5 sec");
-            /* Relancer l'appel 5 secondes plus tard */
-            setTimeout(function () {
-                getJson(url, ret);
-            }, 5000);
-        }
-        /* Préparation de la requête et envoi */
-        ajax.open("GET", url, true);
-        ajax.timeout = 1000;
-        /* Délai d'expiration à 1 seconde */
-        ajax.send();
-    }
-
-    function createCoinsElement(name, img) {
-        var img = '<img src="https://www.cryptocompare.com'+img+'"' +
-            ' width="30"' +
-            ' length="30"' +
-            ' alt="'+name+"'"+
-            ' title="'+name+"'"+
-            ' onclick="alert(\''+name+'\')"'+
-            '/>'
-        return img;
-    }
-
-    function createImageElement(name, img) {
-        var img = '<img src="https://www.cryptocompare.com'+img+'"' +
-            ' width="30"' +
-            ' length="30"' +
-            ' alt="'+name+"'"+
-            ' title="'+name+"'"+
-            ' onclick="getCryptos(\''+name+'\')"'+
-            '/>'
-        return img;
-    }
-
-    window.onload = function () {
-        document.getElementById("message").innerHTML = "Load ...";
-        getExchange();
-    }
-
-
-</script>
 <body>
-<div id="message"><p>Zone message</p></div><br /><br/>
-<div id="radios"><p>Zone radios</p></div><br /><br/>
+<h1>Gestion de vos cryptos favoris</h1>
+<div id="message"><p>Zone message</p></div>
+<h2>Vos favoris actuelles</h2>
+<div id="favoris"><p>Zone favoris</p></div>
+<p>Exchange alphabet</p>
+<br/><br/>
+<div id="alph_exch"></div>
+<br/><br/>
+<div id="radios"><p>Zone radios</p></div>
+<br/><br/>
+<p>Exchange coins</p>
+<div id="alph_coin"></div>
 <div id="selects"><p>Zone selects</p></div>
 <div id="container"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.1.1 21/11/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.0 30/11/2020</div>
+<!-- The Modal -->
+<div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div id="modalcontent" class="modal-content">
+        <p>Some text in the Modal..</p>
+    </div>
+    <div id="modalform" class="modal-content">
+        <p>Choose option:</p>
+        <button>Add to favoris</button>
+        <button>Print courbe</button>
+        <button>Print statistique</button>
+    </div>
+</div>
 </body>
 </html>

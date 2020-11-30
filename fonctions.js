@@ -1,8 +1,30 @@
 /**
- * version 3 21/11/2020
- * @param {type} func
- * @param {type} param
- * @returns {String}
+ * version 5 28/11/2020
+ */
+
+let apikey = "1a01edc67d71cef22b5f25b5b439fb9d512a339d7ac223f02d93d34dc3635a32";
+
+/**
+ * Add space between a et b to have a string size long
+ * @param string a
+ * @param string b
+ * @param integer size
+ * @returns string
+ */
+function printSpace(a, b, size) {
+    let interval = "";
+    while ((a + interval + b).length < size - 1) interval = interval + "_";
+    return a + interval + b;
+}
+
+/**
+ * Construct url to use to cryptocompare
+ * @param func
+ * @param coin
+ * @param currency
+ * @param exchange
+ * @param param
+ * @returns {string}
  */
 function constructUrl(func, coin, currency, exchange, param) {
     var url = "https://min-api.cryptocompare.com/data/"
@@ -16,11 +38,12 @@ function constructUrl(func, coin, currency, exchange, param) {
         url += "&e=" + exchange;
     url += "&" + param;
     url += "&rand=" + Math.round(100000 * Math.random());
+    url += "&api_key=" + apikey;
     return url;
 }
 
 /**
- * Formatage de la date
+ * Date format
  * @param {type} d
  * @returns {String}
  */
@@ -51,7 +74,7 @@ function numAverage(a) {
  */
 function formatMontant(currency, m) {
     var a = 'fr-FR';
-    if ('USD' == currency ) {
+    if ('USD' == currency) {
         a = 'us-US';
     }
     let intlN = new Intl.NumberFormat(a, {style: 'currency', currency: currency, maximumFractionDigits: 5});
@@ -59,7 +82,7 @@ function formatMontant(currency, m) {
 }
 
 /**
- * 
+ *
  * @param {type} m
  * @returns {String}
  */
@@ -69,7 +92,7 @@ function formatCoin(m) {
 }
 
 /**
- * 
+ *
  * @param {type} UNIX_timestamp
  * @returns {String}
  */
@@ -95,7 +118,7 @@ function timeConverter(UNIX_timestamp, complet) {
 }
 
 /**
- * 
+ *
  * @param {type} UNIX_timestamp
  * @returns {String}
  */
@@ -119,7 +142,7 @@ function hourConverter(UNIX_timestamp) {
 
 
 /**
- * 
+ *
  * @param {type} url
  * @param {type} ret
  * @returns {undefined}
@@ -178,7 +201,7 @@ function getJson(url, ret) {
 }
 
 /**
- * 
+ *
  * @returns {undefined}
  */
 function notifyMe(mess) {
@@ -249,7 +272,7 @@ function affichageTexte(currency, box, zone, inPrevious, inCurrent, previousDate
 }
 
 /**
- * 
+ *
  * @param {type} texte
  * @returns {undefined}
  */
@@ -262,7 +285,7 @@ function popup(texte) {
 }
 
 /**
- * 
+ *
  * @param {type} test
  * @param {type} out
  * @returns {undefined}
@@ -278,4 +301,38 @@ function traitePlus(test, out) {
     } else {
         out.text += "-";
     }
+}
+
+function testLetter(word, letter) {
+    let up = letter.toUpperCase();
+    let wup = word[0].toUpperCase();
+    let ret = false;
+    ret = ret || wup == up;
+    ret = ret || (letter == '#' && (wup < 'A' || wup > 'Z'))
+    return ret;
+}
+
+function setCookie(name, value, days) {
+    var expires = "";
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+}
+
+function getCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 }
