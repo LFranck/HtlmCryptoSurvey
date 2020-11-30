@@ -3,11 +3,11 @@
 <head>
     <title>Cours en temps réel (Prototype)</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="htmlcryptosurvey.css" type="text/css" media="screen" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="stylesheet" href="htmlcryptosurvey.css" type="text/css" media="screen"/>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
         function drawChart(values, options) {
@@ -219,14 +219,18 @@
                 }
                 var ligne = [];
                 if (i < localDays.length - 1) {
+
                     // Calcul des critères pour l'achat
                     var currentachat = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
                     var resultachat = {text: "achat (" + currentachat + "%) ", compteur: 0};
                     var limiteachat = (limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-                    if ((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
+                    // la valeur monte et la moyenne descend
+                    if ((localDays[i].low < localDays[i + 1].low) && (moyLow[i] > moyLow[i + 1])) {
+                        // Les courbes se croisent
                         traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
-                        traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
-                        traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
+                        // Idem avec la courbe des valeurs hautes
+                        traitePlus((localDays[i].high < localDays[i + 1].high) && (moyHigh[i] > moyHigh[i + 1]), resultachat);
+                        // La valeur courante est dans la limite interressante
                         traitePlus(localDays[i + 1].close < limiteachat, resultachat);
                         if (resultachat.compteur >= nbCritere) {
                             lastAchat = localDays[i].close;
@@ -235,14 +239,18 @@
                                 notifyMe("Achat interressant !!!");
                         }
                     }
+
                     // Calcul des critères pour la vente
                     var currentvente = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
                     var resultvente = {text: "vente (" + currentvente + "%) ", compteur: 0};
                     var limitevente = (1 - limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-                    if ((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
+                    // la valeur descend et la moyenne monte
+                    if ((localDays[i].high > localDays[i + 1].high) && (moyHigh[i] < moyHigh[i + 1])) {
+                        // Les courbes se croisent
                         traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
-                        traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
-                        traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
+                        // Idem avec la courbe des valeurs basses
+                        traitePlus((localDays[i].low > localDays[i + 1].low) && (moyLow[i] < moyLow[i + 1]), resultvente);
+                        // La valeur courante est dans la limite interressante
                         traitePlus(localDays[i + 1].close > limitevente, resultvente);
                         if (resultvente.compteur >= nbCritere) {
                             lastVente = localDays[i].close;

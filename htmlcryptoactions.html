@@ -139,10 +139,13 @@
             let i = localDays.length - 2;
             let resultachat = {text: "achat ", compteur: 0};
             let limiteachat = (limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-            if ((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
+            // la valeur monte et la moyenne descend
+            if ((localDays[i].low < localDays[i + 1].low) && (moyLow[i] > moyLow[i + 1])) {
+                // Les courbes se croisent
                 traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
-                traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
-                traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
+                // Idem avec la courbe des valeurs hautes
+                traitePlus((localDays[i].high < localDays[i + 1].high) && (moyHigh[i] > moyHigh[i + 1]), resultachat);
+                // La valeur courante est dans la limite interressante
                 traitePlus(localDays[i + 1].close < limiteachat, resultachat);
                 if (resultachat.compteur >= nbCritere) {
                     lastAchat = localDays[i].close;
@@ -153,10 +156,13 @@
             // Calcul des critères pour la vente
             var resultvente = {text: "vente ", compteur: 0};
             var limitevente = (1 - limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-            if ((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
+            // la valeur descend et la moyenne monte
+            if ((localDays[i].high > localDays[i + 1].high) && (moyHigh[i] < moyHigh[i + 1])) {
+                // Les courbes se croisent
                 traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
-                traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
-                traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
+                // Idem avec la courbe des valeurs basses
+                traitePlus((localDays[i].low > localDays[i + 1].low) && (moyLow[i] < moyLow[i + 1]), resultvente);
+                // La valeur courante est dans la limite interressante
                 traitePlus(localDays[i + 1].close > limitevente, resultvente);
                 if (resultvente.compteur >= nbCritere) {
                     lastVente = localDays[i].close;

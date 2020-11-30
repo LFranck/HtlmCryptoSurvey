@@ -286,9 +286,9 @@ function popup(texte) {
 
 /**
  *
- * @param {type} test
- * @param {type} out
- * @returns {undefined}
+ * @param {boolean} test
+ * @param {string} out
+ * @returns {void}
  */
 function traitePlus(test, out) {
     if (out == undefined) {
