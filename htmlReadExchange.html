@@ -11,6 +11,8 @@
     <script type="text/javascript" src="fonctions.js"></script>
     <script type="text/javascript">
         // Variables globales
+        let alpEchSelected;
+        let alpCoiSelected;
         let echSelected;
         let coiSelected;
         let arrCoins;
@@ -24,6 +26,20 @@
             if (event.target == modal) {
                 modal.style.display = "none";
             }
+        }
+
+        function setFormBykey(exchange, coin, key) {
+            console.log("setFormBykey");
+            let $output = "<tr>" +
+                "<td>" + exchange + "</td>" +
+                "<td>" + coin + "</td>" +
+                "<td>" + key + "</td>" +
+                "<td><input type=\"number\" min=\"2\" max=\"20\" id=\"snbjr\" value=\"4\" size=\"1\" /></td>" +
+                "<td><input type=\"number\" id=\"nbcriteres\" name=\"nbcriteres\" min=\"1\" max=\"3\" size=\"1\" value=\"3\" /></td>" +
+                "<td><input type=\"number\" id=\"pccriteres\" name=\"pccriteres\" min=\"5\" max=\"100\" step=\"5\" size=\"2\" value=\"30\" /></td>" +
+                "<td><button>Add to favoris</button></td>" +
+                "</tr>";
+            return $output;
         }
 
         /**
@@ -57,10 +73,15 @@
                         if (jsonCours.Response == "Error")
                             document.getElementById("modalcontent").insertAdjacentHTML('beforeend', jsonCours.Message);
                         else {
+                            let response = "<table><tr><th>Exchange</th><th>Coin</th><th>Currency</th><th colspan='3'>Proposition</th><th>Validation</th></tr>";
+                            response += "<tr><th></th><th></th><th></th><th>Jours</th><th>Critère</th><th>%</th><th></th></tr>";
                             Object.keys(jsonCours).forEach(key => {
-                                //console.log(key + " -> " + jsonCours[key]);
-                                document.getElementById("modalcontent").insertAdjacentHTML('beforeend', key + " -> " + jsonCours[key]+"<br />");
-                            })
+                                console.log("getValues -> " + key + " -> " + jsonCours[key] + " " + setFormBykey(exchange, coin, key));
+                                response += setFormBykey(exchange, coin, key);
+                            });
+                            response += "</table>";
+                            document.getElementById("modalcontent").insertAdjacentHTML('beforeend', response);
+
                         }
                     } catch (err) {
                         console.log("getValues : Retour JSON incorrect");
@@ -86,6 +107,16 @@
         }
 
         function onClickCoins(letter) {
+            console.log("onClickCoins("+letter+") alpCoiSelected="+alpCoiSelected);
+            // Change background
+            if(alpCoiSelected!=null) {
+                var property = document.getElementById("onClickCoins_"+alpCoiSelected);
+                property.style.backgroundColor = "#FFFFFF"
+            }
+            alpCoiSelected = letter;
+            var property = document.getElementById("onClickCoins_"+letter);
+            property.style.backgroundColor = "#7FFF00"
+
             // Creation radiobox
             document.getElementById("selects").innerHTML = "";
             document.getElementById("message").innerHTML = "Select the cryptos you want...";
@@ -101,6 +132,16 @@
         }
 
         function onClickEchange(letter) {
+            console.log("onClickEchange("+letter+") alpEchSelected="+alpEchSelected);
+            // Change background
+            if(alpEchSelected!=null) {
+                var property = document.getElementById("onClickEchange_"+alpEchSelected);
+                property.style.backgroundColor = "#FFFFFF"
+            }
+            alpEchSelected = letter;
+            var property = document.getElementById("onClickEchange_"+letter);
+            property.style.backgroundColor = "#7FFF00"
+
             // Creation radiobox
             document.getElementById("radios").innerHTML = "";
             document.getElementById("message").innerHTML = "Chose an exchange";
@@ -283,13 +324,13 @@
             let j = 91;
 
             // Set first
-            document.getElementById(target).innerHTML = "<button onclick=\"" + get + "('#')\">#</button>";
+            document.getElementById(target).innerHTML = "<button id=\""+get+"_#"+"\" onclick=\"" + get + "('#')\">#</button>";
 
             //loop through the values from i to j
             for (let k = i; k < j; k++) {
                 //convert the char code to string (Alphabets)
                 let str = String.fromCharCode(k);
-                str = "<button onclick=\"" + get + "('" + str + "')\">" + str + "</button>";
+                str = "<button id=\""+get+"_"+str+"\" onclick=\"" + get + "('" + str + "')\">" + str + "</button>";
                 //print the result
                 document.getElementById(target).insertAdjacentHTML('beforeend', str + " ");
             }
@@ -305,10 +346,10 @@
             getExchange();
             getCryptos();
 
-            let incookie =[['kraken','BTC','USD'],['kraken','BTC','EUR']];
-            setCookie("favoris", incookie, 1000);
-            let outcookie=getCookie("favoris");
-            console.log(outcookie);
+            let inCookie = [['kraken', 'BTC', 'USD'], ['kraken', 'BTC', 'EUR']];
+            setCookie("favoris", inCookie, 1000);
+            let outCookie = getCookie("favoris");
+            document.getElementById("favoris").innerHTML = outCookie.toString();
         }
     </script>
 </head>
@@ -316,7 +357,7 @@
 <h1>Gestion de vos cryptos favoris</h1>
 <div id="message"><p>Zone message</p></div>
 <h2>Vos favoris actuelles</h2>
-<div id="favoris"><p>Zone favoris</p></div>
+<div id="favoris"><p>Favoris à afficher</p></div>
 <p>Exchange alphabet</p>
 <br/><br/>
 <div id="alph_exch"></div>
@@ -327,18 +368,12 @@
 <div id="alph_coin"></div>
 <div id="selects"><p>Zone selects</p></div>
 <div id="container"></div>
-<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.0 30/11/2020</div>
+<div id="source">2020©LFRANCK - Cours provenant de l'API cryptocompare.com - Version 0.2.1 01/12/2020</div>
 <!-- The Modal -->
 <div id="myModal" class="modal">
     <!-- Modal content -->
-    <div id="modalcontent" class="modal-content">
-        <p>Some text in the Modal..</p>
-    </div>
-    <div id="modalform" class="modal-content">
-        <p>Choose option:</p>
-        <button>Add to favoris</button>
-        <button>Print courbe</button>
-        <button>Print statistique</button>
+    <div class="modal-content">
+        <p id="modalcontent">Some text in the Modal..</p>
     </div>
 </div>
 </body>

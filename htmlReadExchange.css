@@ -54,3 +54,8 @@ div#info {
     text-decoration: none;
     cursor: pointer;
 }
+
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
