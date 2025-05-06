@@ -24,10 +24,9 @@ function constructUrl(func, coin, currency, exchange, param) {
  * @param {type} d
  * @returns {String}
  */
-function formatDate(d) {
-    var dt = new Date();
-    dt.setTime(1000 * d);
-    return dt.toLocaleDateString('fr-FR', {timeZone: 'UTC'});
+function formatDate(d, timeZone = 'UTC') {
+    const dt = new Date(d * 1000); // Convert UNIX timestamp
+    return dt.toLocaleDateString('fr-FR', { timeZone });
 }
 
 /**
@@ -115,6 +114,24 @@ function hourConverter(UNIX_timestamp) {
     if (sec < 10)
         sec = "0" + sec;
     return hour + ':' + min + ':' + sec;
+}
+
+function convertTime(UNIX_timestamp, { showHour = false, complet = false }) {
+    const dateObj = new Date(UNIX_timestamp * 1000);
+    const date = dateObj.getDate();
+    const month = MONTHS[dateObj.getMonth()];
+
+    if (!showHour) {
+        return `${date} ${month}`;
+    }
+
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const mins = dateObj.getMinutes().toString().padStart(2, '0');
+    const secs = dateObj.getSeconds().toString().padStart(2, '0');
+
+    return complet
+        ? `${date} ${month} ${hours}:${mins}:${secs}`
+        : `${hours}:${mins}:${secs}`;
 }
 
 
@@ -233,19 +250,16 @@ function notifyMe(mess) {
  * @param previousDate
  */
 function affichageTexte(currency, box, zone, inPrevious, inCurrent, previousDate) {
-    //console.log("affichageTexte currency="+currency);
-    document.getElementById(zone).innerHTML = "<small><small>" + previousDate + "</small> " + formatMontant(currency, inPrevious) + "</small>";
-    if (inPrevious < inCurrent) {
-        document.getElementById(zone).innerHTML += "↗";
-        document.getElementById(box).style.backgroundColor = "#29b84c";
-    } else if (inPrevious > inCurrent) {
-        document.getElementById(zone).innerHTML += "↘";
-        document.getElementById(box).style.backgroundColor = "#c81111";
-    } else {
-        document.getElementById(zone).innerHTML += " ➔";
-        document.getElementById(box).style.backgroundColor = "#0c83b6";
-    }
-    document.getElementById(zone).innerHTML += "<br />" + formatMontant(currency, inCurrent);
+    const zoneElement = document.getElementById(zone);
+    const boxElement = document.getElementById(box);
+
+    zoneElement.innerHTML = `
+        <small><small>${previousDate}</small> ${formatMontant(currency, inPrevious)}</small>
+        ${inPrevious < inCurrent ? '↗' : inPrevious > inCurrent ? '↘' : '➔'}
+        <br />${formatMontant(currency, inCurrent)}
+    `;
+
+    boxElement.style.backgroundColor = inPrevious < inCurrent ? "#29b84c" : inPrevious > inCurrent ? "#c81111" : "#0c83b6";
 }
 
 /**

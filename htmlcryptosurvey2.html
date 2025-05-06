@@ -255,14 +255,16 @@
                 }
                 var ligne = [];
                 let highLowVariationPercent = Math.round(100 * (localDays[i].high - localDays[i].low) / localDays[i].low);
+                let highLowMoyVariationPercent = Math.round(100 * (moyHigh[i] - moyLow[i]) / moyLow[i]);
+
                 if (i < localDays.length - 1) {
                     var currentachat = (lastVente == 0) ? 0 : Math.round(10 * (100 - 100 * localDays[i].low / lastVente)) / 10;
                     var resultachat = {text: "achat (" + currentachat + "%) ", compteur: 0};
                     var limiteachat = (limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-                    if ((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1])) {
-                        traitePlus((localDays[i].low < moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1]), resultachat);
-                        traitePlus(localDays[i].low < localDays[i + 1].low, resultachat);
-                        traitePlus(localDays[i].high < localDays[i + 1].high, resultachat);
+                    var t1 = (localDays[i].low <moyLow[i]) && (localDays[i + 1].low > moyLow[i + 1] && (localDays[i + 2].low > moyLow[i + 2]));
+                    if (t1) {
+                        traitePlus(t1, resultachat);
+                        traitePlus(highLowVariationPercent>highLowMoyVariationPercent || highLowVariationPercent>5, resultachat);
                         traitePlus(localDays[i + 1].close < limiteachat, resultachat);
                         if (resultachat.compteur >= nbCritere) {
                             lastAchat = localDays[i].close;
@@ -275,10 +277,10 @@
                     var currentvente = (lastAchat == 0) ? 0 : Math.round(10 * (100 * localDays[i].high / lastAchat - 100)) / 10;
                     var resultvente = {text: "vente (" + currentvente + "%) ", compteur: 0};
                     var limitevente = (1 - limitPourcent / 100) * (localDays[i + 1].high - localDays[i + 1].low) + localDays[i + 1].low;
-                    if ((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1])) {
-                        traitePlus((localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1]), resultvente);
-                        traitePlus(localDays[i].high > localDays[i + 1].high, resultvente);
-                        traitePlus(localDays[i].low > localDays[i + 1].low, resultvente);
+                    var t2 = (localDays[i].high > moyHigh[i]) && (localDays[i + 1].high < moyHigh[i + 1] && (localDays[i + 2].high < moyHigh[i + 2]));
+                    if (t2) {
+                        traitePlus(t2, resultvente);
+                        traitePlus(highLowVariationPercent>highLowMoyVariationPercent || highLowVariationPercent>5, resultachat);
                         traitePlus(localDays[i + 1].close > limitevente, resultvente);
                         if (resultvente.compteur >= nbCritere) {
                             lastVente = localDays[i].close;
@@ -296,7 +298,7 @@
                     a3 = tmp + "%";
                 }
 
-                ligne.push(timeConverter(localDays[i].time, false)+ '> '+highLowVariationPercent);
+                ligne.push(timeConverter(localDays[i].time, false)+ '> '+highLowVariationPercent+'?'+highLowMoyVariationPercent);
                 ligne.push(localDays[i].low);
                 ligne.push(a1);
                 ligne.push(localDays[i].high);
